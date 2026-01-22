@@ -4,37 +4,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>로그인 (미니퀘스트 1)</title>
+    <title>로그인 - 아무 말 대잔치</title>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body>
-    <h1>로그인</h1>
-    <form id="loginForm">
-        <div>
-            <label for="username">아이디:</label>
-            <input type="text" id="username" name="username" placeholder="아이디를 입력하세요">
+    <header>
+        <a href="/" class="logo">아무 말 대잔치</a>
+    </header>
+
+    <main class="login-container">
+        <h1 class="login-title">로그인</h1>
+
+        <form id="loginForm" class="login-form">
+            <div class="input-group">
+                <label for="email">이메일</label>
+                <input type="email" id="email" name="email" placeholder="이메일을 입력하세요">
+                <div id="emailError" class="helper-text"></div>
+            </div>
+
+            <div class="input-group">
+                <label for="password">비밀번호</label>
+                <input type="password" id="password" name="password" placeholder="비밀번호를 입력하세요">
+                <div id="passwordError" class="helper-text"></div>
+            </div>
+
+            <button type="submit" id="loginBtn" class="login-btn" disabled>로그인</button>
+        </form>
+
+        <div class="signup-link">
+            <a href="#">회원가입</a>
         </div>
-        <br>
-        <div>
-            <label for="password">비밀번호:</label>
-            <input type="password" id="password" name="password" placeholder="비밀번호를 입력하세요">
-        </div>
-        <br>
-        <button type="submit">로그인</button>
-    </form>
+    </main>
 
-    <script>
-        // 미니퀘스트 1: 버튼 클릭 시 페이지 이동 Event 코드
-        const loginForm = document.getElementById('loginForm');
-
-        loginForm.addEventListener('submit', function (event) {
-            event.preventDefault(); // 폼이 자동으로 제출되어 새로고침되는 것을 막음
-
-            // 퀘스트 조건: "이벤트로 페이지 이동"
-            alert('이벤트 감지! 메인 페이지로 이동합니다.');
-            window.location.href = '/';
-        });
-    </script>
+    <script src="js/login.js"></script>
 </body>
 
 </html>

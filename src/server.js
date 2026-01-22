@@ -5,10 +5,15 @@ const path = require('path');
 const port = 3000;
 
 // 정적 파일(CSS, JS 등)을 제공하기 위한 설정 (나중에 필요함)
-app.use(express.static(path.join(__dirname, '../public')));
+app.use(express.static(path.join(__dirname, '../public'), { index: false }));
 
-// 루트 경로 ('/')로 접속하면 index.html 파일을 보내줌
+// 루트 경로 ('/')로 접속하면 login.html 파일을 보내줌 (로그인부터 시작)
 app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public', 'login.html'));
+});
+
+// 게시글 목록 페이지 ('/posts')
+app.get('/posts', (req, res) => {
     res.sendFile(path.join(__dirname, '../public', 'index.html'));
 });
 
