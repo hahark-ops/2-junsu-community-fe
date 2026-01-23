@@ -37,9 +37,17 @@ header {
     background-color: white;
     padding: 36px 20px;
     display: flex;
-    justify-content: flex-end;
+    justify-content: center;
+    /* justify-content: flex-end; -> center로 변경하여 내부 컨텐츠 중앙 정렬 */
     align-items: center;
     position: relative;
+}
+
+.header-content {
+    width: 100%;
+    max-width: 592px;
+    display: flex;
+    justify-content: flex-end;
 }
 
 .logo {
