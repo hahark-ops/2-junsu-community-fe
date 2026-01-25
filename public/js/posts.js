@@ -3,6 +3,10 @@ const API_BASE_URL = 'http://localhost:8000';
 document.addEventListener('DOMContentLoaded', () => {
     const postContainer = document.getElementById('postList');
     const scrollTrigger = document.getElementById('scrollTrigger');
+    const profileIcon = document.getElementById('profileIcon');
+    const profileDropdown = document.getElementById('profileDropdown');
+    const logoutBtn = document.getElementById('logoutBtn');
+
     let offset = 0;
     const LIMIT = 10;
     let isLoading = false;
@@ -100,21 +104,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateProfileIcon(imageUrl) {
-        const profileIcon = document.querySelector('.profile-icon');
         if (profileIcon) {
             if (imageUrl) {
                 profileIcon.style.backgroundImage = `url(${imageUrl})`;
             } else {
                 profileIcon.style.backgroundColor = '#7F6AEE'; // Default color for logged in user
             }
-
-            // Optional: Click to logout or go to settings
-            profileIcon.onclick = () => {
-                const confirmLogout = confirm('로그아웃 하시겠습니까?');
-                if (confirmLogout) {
-                    logout();
-                }
-            };
         }
     }
 
@@ -167,6 +162,30 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         `;
         return card;
+    }
+
+    // 3. Event Listeners
+    // Dropdown toggle
+    if (profileIcon) {
+        profileIcon.addEventListener('click', (e) => {
+            e.stopPropagation();
+            profileDropdown.classList.toggle('show');
+        });
+    }
+
+    // Close dropdown on outside click
+    document.addEventListener('click', (e) => {
+        if (profileDropdown && !profileDropdown.contains(e.target) && e.target !== profileIcon) {
+            profileDropdown.classList.remove('show');
+        }
+    });
+
+    // Logout
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            logout();
+        });
     }
 
     // Inline Intersection Observer

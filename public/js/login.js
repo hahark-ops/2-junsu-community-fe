@@ -96,6 +96,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (response.ok) {
                 // 로그인 성공
+                // localStorage에 세션 정보 저장 (프론트엔드 상태 관리용)
+                const userData = (result.data && result.data.user) ? result.data.user : result.data;
+                const token = (result.data && result.data.token) ? result.data.token : null;
+
+                if (userData) {
+                    localStorage.setItem('user', JSON.stringify(userData));
+                }
+                if (token) {
+                    localStorage.setItem('token', token);
+                }
+
                 alert(`로그인 성공! ${result.message}`);
                 window.location.href = '/posts';
             } else {

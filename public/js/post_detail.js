@@ -135,7 +135,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.ok) {
                 const result = await response.json();
                 const data = result.data || result;
-                renderComments(data.comments || []);
+                // API may return array directly or object with comments array
+                const comments = Array.isArray(data) ? data : (data.comments || []);
+                renderComments(comments);
             }
         } catch (error) {
             console.error('Failed to fetch comments:', error);
@@ -151,7 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const method = isLiked ? 'DELETE' : 'POST';
-            const response = await fetch(`${API_BASE_URL}/v1/posts/${postId}/like`, {
+            const response = await fetch(`${API_BASE_URL}/v1/posts/${postId}/likes`, {
                 method: method,
                 credentials: 'include'
             });
@@ -281,8 +283,9 @@ document.addEventListener('DOMContentLoaded', () => {
         viewCount.textContent = formatCount(currentPost.viewCount || 0);
         commentCountEl.textContent = formatCount(currentPost.commentCount || 0);
 
-        // 본인 글이면 수정/삭제 버튼 표시 (writerEmail로 비교)
-        if (currentUser && currentPost.writerEmail === currentUser.email) {
+        // 본인 글이면 수정/삭제 버튼 표시 (userId 비교)
+        // 백엔드 응답 구조: author: { userId, ... }
+        if (currentUser && currentPost.author && currentPost.author.userId === currentUser.userId) {
             postActions.style.display = 'flex';
         }
 
