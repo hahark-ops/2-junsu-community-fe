@@ -102,9 +102,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (userData) {
                     localStorage.setItem('user', JSON.stringify(userData));
+                    // 편의를 위해 개별 필드도 저장 (다른 페이지에서 쉽게 접근)
+                    if (userData.userId) localStorage.setItem('userId', userData.userId);
+                    if (userData.nickname) localStorage.setItem('nickname', userData.nickname);
+                    if (userData.email) localStorage.setItem('email', userData.email);
+                    if (userData.profileImage) localStorage.setItem('profileImage', userData.profileImage);
                 }
                 if (token) {
                     localStorage.setItem('token', token);
+                    localStorage.setItem('accessToken', token); // 호환성 유지
                 }
 
                 alert(`로그인 성공! ${result.message}`);

@@ -49,9 +49,24 @@ document.addEventListener('DOMContentLoaded', () => {
     let isLiked = false;
     let editingCommentId = null;
 
-    // ==========================================
-    // 2. Helper Functions
-    // ==========================================
+    // Load User from LocalStorage (Sync) to avoid delay
+    function loadUserFromStorage() {
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+            currentUser = JSON.parse(userStr);
+        }
+        // Also check if individual id exists (robustness)
+        if (!currentUser && localStorage.getItem('userId')) {
+            currentUser = {
+                userId: localStorage.getItem('userId'),
+                nickname: localStorage.getItem('nickname'),
+                email: localStorage.getItem('email'),
+                profileImage: localStorage.getItem('profileImage')
+            };
+        }
+    }
+
+    // ... Helper Functions ...
     function formatCount(num) {
         if (num >= 100000) return Math.floor(num / 1000) + 'k';
         if (num >= 10000) return Math.floor(num / 1000) + 'k';
@@ -60,6 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function formatDate(dateStr) {
+        if (!dateStr) return '';
         const date = new Date(dateStr);
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -87,9 +103,9 @@ document.addEventListener('DOMContentLoaded', () => {
         deleteModal.style.display = 'none';
     }
 
-    // ==========================================
-    // 3. API Functions
-    // ==========================================
+    // ... API Functions ...
+
+    // Fetch latest user info (Async) - updates currentUser if changed
     async function fetchCurrentUser() {
         try {
             const response = await fetch(`${API_BASE_URL}/v1/auth/me`, {
@@ -97,7 +113,13 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             if (response.ok) {
                 const result = await response.json();
-                currentUser = result.data || result; // data wrapper 지원
+                const remoteUser = result.data || result;
+                if (remoteUser) {
+                    currentUser = remoteUser;
+                    // Update storage
+                    localStorage.setItem('user', JSON.stringify(currentUser));
+                    if (currentUser.userId) localStorage.setItem('userId', currentUser.userId);
+                }
             }
         } catch (error) {
             console.error('Failed to fetch user:', error);
@@ -112,13 +134,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!response.ok) {
                 alert('게시글을 찾을 수 없습니다.');
-                window.location.href = 'index.html';
+                window.location.href = '/posts'; // index.html -> /posts
                 return;
             }
 
             const result = await response.json();
-            currentPost = result.data || result; // data wrapper 지원
-            console.log('Post data:', currentPost);
+            currentPost = result.data || result;
             renderPost();
         } catch (error) {
             console.error('Failed to fetch post:', error);
@@ -135,7 +156,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.ok) {
                 const result = await response.json();
                 const data = result.data || result;
-                // API may return array directly or object with comments array
                 const comments = Array.isArray(data) ? data : (data.comments || []);
                 renderComments(comments);
             }
@@ -147,26 +167,51 @@ document.addEventListener('DOMContentLoaded', () => {
     async function toggleLike() {
         if (!currentUser) {
             alert('로그인이 필요합니다.');
-            window.location.href = 'login.html';
+            window.location.href = '/login.html';
             return;
         }
 
+        console.log('[Like] Toggle Like called. Current isLiked:', isLiked);
+
         try {
+            // Determine method based on current state
             const method = isLiked ? 'DELETE' : 'POST';
+
             const response = await fetch(`${API_BASE_URL}/v1/posts/${postId}/likes`, {
                 method: method,
                 credentials: 'include'
             });
 
-            if (response.ok) {
-                isLiked = !isLiked;
-                const currentCount = parseInt(likeCount.textContent) || 0;
-                const newCount = isLiked ? currentCount + 1 : currentCount - 1;
-                likeCount.textContent = formatCount(Math.max(0, newCount));
+            console.log('[Like] Request:', method, 'Status:', response.status);
+
+            // Handle 409 Conflict (ALREADY_LIKED) - just correct our state, don't retry
+            if (response.status === 409) {
+                console.log('[Like] Got 409 Conflict - already liked. Correcting state.');
+                isLiked = true;
+                likeBtn.classList.add('liked');
+                // Don't change count - backend already has the like counted
+                return;
+            }
+
+            if (response.ok || response.status === 200 || response.status === 201 || response.status === 204) {
+                // Toggle the state
+                isLiked = (method === 'POST');
                 likeBtn.classList.toggle('liked', isLiked);
+
+                console.log('[Like] Success! isLiked is now:', isLiked);
+
+                // Update count locally
+                let count = parseInt(likeCount.textContent.replace(/[^0-9]/g, '')) || 0;
+                if (method === 'POST') count++;
+                else count--;
+                likeCount.textContent = formatCount(Math.max(0, count));
+
+            } else {
+                const errorText = await response.text();
+                console.error('[Like] Failed:', response.status, errorText);
             }
         } catch (error) {
-            console.error('Failed to toggle like:', error);
+            console.error('[Like] Error:', error);
         }
     }
 
@@ -185,7 +230,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (error) {
             console.error('Failed to delete post:', error);
-            alert('삭제 중 오류가 발생했습니다.');
         }
     }
 
@@ -195,22 +239,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!currentUser) {
             alert('로그인이 필요합니다.');
-            window.location.href = 'login.html';
+            window.location.href = '/login.html';
             return;
         }
 
         try {
             let response;
             if (editingCommentId) {
-                // 댓글 수정
-                response = await fetch(`${API_BASE_URL}/v1/comments/${editingCommentId}`, {
+                response = await fetch(`${API_BASE_URL}/v1/posts/${postId}/comments/${editingCommentId}`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
                     body: JSON.stringify({ content })
                 });
             } else {
-                // 댓글 작성
                 response = await fetch(`${API_BASE_URL}/v1/posts/${postId}/comments`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -226,31 +268,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 commentSubmitBtn.classList.remove('active');
                 editingCommentId = null;
                 fetchComments();
-                // 댓글 수 업데이트
-                const currentCount = parseInt(commentCountEl.textContent) || 0;
-                if (!editingCommentId) {
-                    commentCountEl.textContent = formatCount(currentCount + 1);
+
+                // Update comment count
+                let count = parseInt(commentCountEl.textContent.replace(/[^0-9]/g, '')) || 0;
+                if (!editingCommentId) { // If new comment
+                    commentCountEl.textContent = formatCount(count + 1);
                 }
             } else {
                 alert('댓글 등록에 실패했습니다.');
             }
         } catch (error) {
-            console.error('Failed to submit comment:', error);
-            alert('댓글 등록 중 오류가 발생했습니다.');
+            console.error('Error submitting comment:', error);
         }
     }
 
     async function deleteComment(commentId) {
         try {
-            const response = await fetch(`${API_BASE_URL}/v1/comments/${commentId}`, {
+            const response = await fetch(`${API_BASE_URL}/v1/posts/${postId}/comments/${commentId}`, {
                 method: 'DELETE',
                 credentials: 'include'
             });
 
             if (response.ok) {
                 fetchComments();
-                const currentCount = parseInt(commentCountEl.textContent) || 0;
-                commentCountEl.textContent = formatCount(Math.max(0, currentCount - 1));
+                let count = parseInt(commentCountEl.textContent.replace(/[^0-9]/g, '')) || 0;
+                commentCountEl.textContent = formatCount(Math.max(0, count - 1));
             } else {
                 alert('댓글 삭제에 실패했습니다.');
             }
@@ -265,52 +307,110 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderPost() {
         if (!currentPost) return;
 
-        // Backend returns: title, content, fileUrl, writer, viewCount, createdAt, writerEmail
         postTitle.textContent = currentPost.title || '';
         postContent.textContent = currentPost.content || '';
         authorName.textContent = currentPost.writer || '익명';
         postDate.textContent = currentPost.createdAt ? formatDate(currentPost.createdAt) : '';
 
-        // 프로필 이미지는 현재 백엔드에서 제공하지 않음
-        // authorAvatar는 기본 CSS 배경색으로 표시
+        // Author Avatar - Mock or Real
+        if (currentPost.authorProfileImage) {
+            authorAvatar.style.backgroundImage = `url(${currentPost.authorProfileImage})`;
+        } else {
+            authorAvatar.style.backgroundColor = '#D9D9D9';
+        }
 
+        // Image
         if (currentPost.fileUrl) {
             postImage.src = currentPost.fileUrl;
             postImageContainer.style.display = 'block';
+        } else {
+            postImageContainer.style.display = 'none';
         }
 
+        // Stats
         likeCount.textContent = formatCount(currentPost.likeCount || 0);
         viewCount.textContent = formatCount(currentPost.viewCount || 0);
         commentCountEl.textContent = formatCount(currentPost.commentCount || 0);
 
-        // 본인 글이면 수정/삭제 버튼 표시 (userId 비교)
-        // 백엔드 응답 구조: author: { userId, ... }
-        if (currentUser && currentPost.author && currentPost.author.userId === currentUser.userId) {
-            postActions.style.display = 'flex';
+        console.log('[Post] Full post data:', currentPost);
+
+        // Ownership Check (Compare userId)
+        const currentUserId = currentUser ? String(currentUser.userId) : null;
+        // Check multiple possible fields for post author ID
+        let postAuthorId = null;
+        if (currentPost.author && currentPost.author.userId) {
+            postAuthorId = String(currentPost.author.userId);
+        } else if (currentPost.authorId) {
+            postAuthorId = String(currentPost.authorId);
+        } else if (currentPost.userId) {
+            postAuthorId = String(currentPost.userId);
         }
 
-        // 좋아요 상태 확인
-        if (currentPost.isLiked) {
+        console.log('[Post] currentUserId:', currentUserId, ', postAuthorId:', postAuthorId);
+
+        if (currentUserId && postAuthorId && currentUserId === postAuthorId) {
+            postActions.style.display = 'flex';
+        } else {
+            postActions.style.display = 'none';
+        }
+
+        // Like Status - check multiple possible fields
+        if (currentPost.isLiked === true || currentPost.liked === true) {
             isLiked = true;
             likeBtn.classList.add('liked');
+            console.log('[Post] User has already liked this post');
+        } else {
+            isLiked = false;
+            likeBtn.classList.remove('liked');
         }
     }
 
     function renderComments(comments) {
+        console.log('[Comments] Rendering', comments.length, 'comments');
+        console.log('[Comments] Current User:', currentUser);
+
         commentList.innerHTML = '';
 
-        comments.forEach(comment => {
+        comments.forEach((comment, index) => {
             const commentEl = document.createElement('div');
             commentEl.className = 'comment-item';
             commentEl.dataset.id = comment.commentId;
 
-            const isOwner = currentUser && comment.authorId === currentUser.userId;
+            // Determine if current user is owner of comment
+            // Check multiple possible ID locations
+            const currentUserId = currentUser ? String(currentUser.userId) : null;
+            const currentNickname = currentUser ? currentUser.nickname : null;
+
+            // Backend may return authorId, userId, or nested author.userId
+            let commentAuthorId = null;
+            if (comment.authorId) {
+                commentAuthorId = String(comment.authorId);
+            } else if (comment.userId) {
+                commentAuthorId = String(comment.userId);
+            } else if (comment.author && comment.author.userId) {
+                commentAuthorId = String(comment.author.userId);
+            }
+
+            // Fallback: compare by nickname if IDs are not available
+            const commentNickname = comment.authorNickname || comment.nickname || comment.writer;
+
+            // Check ownership by ID or by nickname match
+            let isOwner = false;
+            if (currentUserId && commentAuthorId) {
+                isOwner = currentUserId === commentAuthorId;
+            } else if (currentNickname && commentNickname) {
+                // Fallback to nickname comparison
+                isOwner = currentNickname === commentNickname;
+            }
+
+            console.log(`[Comment ${index}] CommentID: ${comment.commentId}, AuthorID: ${commentAuthorId}, Nickname: ${commentNickname}, CurrentUserID: ${currentUserId}, CurrentNickname: ${currentNickname}, isOwner: ${isOwner}`);
+            console.log(`[Comment ${index}] Full comment object:`, comment);
 
             commentEl.innerHTML = `
                 <div class="comment-header">
                     <div class="comment-author-info">
                         <div class="comment-avatar" ${comment.authorProfileImage ? `style="background-image: url(${comment.authorProfileImage})"` : ''}></div>
-                        <span class="comment-author-name">${comment.authorNickname || '익명'}</span>
+                        <span class="comment-author-name">${comment.authorNickname || comment.nickname || '익명'}</span>
                         <span class="comment-date">${formatDate(comment.createdAt)}</span>
                     </div>
                     ${isOwner ? `
@@ -323,7 +423,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="comment-content">${comment.content}</div>
             `;
 
-            // 댓글 수정/삭제 이벤트
+            // Bind events for this comment
             if (isOwner) {
                 const editBtn = commentEl.querySelector('.edit-comment-btn');
                 const deleteBtn = commentEl.querySelector('.delete-comment-btn');
@@ -335,6 +435,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     commentSubmitBtn.textContent = '댓글 수정';
                     commentSubmitBtn.disabled = false;
                     commentSubmitBtn.classList.add('active');
+                    // Scroll to input
+                    commentInput.scrollIntoView({ behavior: 'smooth' });
                 });
 
                 deleteBtn.addEventListener('click', () => {
@@ -348,49 +450,32 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // ==========================================
-    // 5. Event Listeners
-    // ==========================================
-    // 좋아요 버튼
+    // ... Event Listeners (unchanged mostly) ...
     likeBtn.addEventListener('click', toggleLike);
-
-    // 게시글 수정
     editPostBtn.addEventListener('click', () => {
         window.location.href = `post_edit.html?id=${postId}`;
     });
-
-    // 게시글 삭제
     deletePostBtn.addEventListener('click', () => {
         showModal('게시글을 삭제하시겠습니까?', deletePost);
     });
-
-    // 모달 취소
     modalCancelBtn.addEventListener('click', hideModal);
-
-    // 모달 외부 클릭 시 닫기
     deleteModal.addEventListener('click', (e) => {
-        if (e.target === deleteModal) {
-            hideModal();
-        }
+        if (e.target === deleteModal) hideModal();
     });
-
-    // 댓글 입력
     commentInput.addEventListener('input', () => {
         const hasContent = commentInput.value.trim().length > 0;
         commentSubmitBtn.disabled = !hasContent;
         commentSubmitBtn.classList.toggle('active', hasContent);
     });
-
-    // 댓글 등록
     commentSubmitBtn.addEventListener('click', submitComment);
 
-    // ==========================================
-    // 6. Initialize
-    // ==========================================
+
+    // Initialize
     async function init() {
-        await fetchCurrentUser();
+        loadUserFromStorage(); // Load instantly from local storage
         await fetchPostDetail();
-        await fetchComments();
+        fetchComments();
+        fetchCurrentUser(); // Background refresh user data
     }
 
     init();

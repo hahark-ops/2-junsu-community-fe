@@ -56,6 +56,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
 
+                if (posts.length > 0) {
+                    console.log('[Posts] First post data:', posts[0]);
+                }
+
                 posts.forEach(post => {
                     const postEl = createPostElement(post);
                     postContainer.appendChild(postEl);

@@ -73,9 +73,9 @@ header {
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    background-color: #333;
-    background-image: url('../assets/profile_placeholder.png');
+    background-color: #7F6AEE;
     background-size: cover;
+    background-position: center;
     cursor: pointer;
     border: 1px solid #eee;
 }

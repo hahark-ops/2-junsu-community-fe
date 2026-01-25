@@ -22,20 +22,23 @@
         <!-- 게시글 본문 영역 -->
         <article class="post-article">
             <!-- 제목 -->
-            <h1 class="post-title" id="postTitle">제목 1</h1>
+            <h1 class="post-title" id="postTitle"></h1>
 
             <!-- 작성자 정보 + 수정/삭제 버튼 -->
             <div class="post-meta-row">
                 <div class="author-info">
                     <div class="author-avatar" id="authorAvatar"></div>
-                    <span class="author-name" id="authorName">더미 작성자 1</span>
-                    <span class="post-date" id="postDate">2021-01-01 00:00:00</span>
+                    <span class="author-name" id="authorName"></span>
+                    <span class="post-date" id="postDate"></span>
                 </div>
+                <!-- 수정/삭제 버튼 (본인일 때만 표시) -->
                 <div class="post-actions" id="postActions" style="display: none;">
                     <button class="action-btn edit-btn" id="editPostBtn">수정</button>
                     <button class="action-btn delete-btn" id="deletePostBtn">삭제</button>
                 </div>
             </div>
+
+            <div class="post-divider"></div>
 
             <!-- 게시글 이미지 -->
             <div class="post-image-container" id="postImageContainer" style="display: none;">
@@ -43,12 +46,10 @@
             </div>
 
             <!-- 본문 내용 -->
-            <div class="post-content" id="postContent">
-                본문 내용이 여기에 표시됩니다.
-            </div>
+            <div class="post-content" id="postContent"></div>
 
-            <!-- 통계 (좋아요, 조회수, 댓글수) -->
-            <div class="post-stats">
+            <!-- 통계 박스 (좋아요, 조회수, 댓글수) -->
+            <div class="stats-box">
                 <button class="stat-item like-btn" id="likeBtn">
                     <span class="stat-count" id="likeCount">0</span>
                     <span class="stat-label">좋아요수</span>
