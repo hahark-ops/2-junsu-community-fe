@@ -406,7 +406,20 @@ document.addEventListener('DOMContentLoaded', () => {
         if (currentPost.isLiked === true || currentPost.liked === true) {
             isLiked = true;
             likeBtn.classList.add('liked');
-            console.log('[Post] User has already liked this post');
+            console.log('[Post] User has already liked this post (boolean flag)');
+        } else if (currentPost.likes && Array.isArray(currentPost.likes) && currentUser) {
+            // likes 배열이 있고 사용자 정보가 있다면 확인
+            const userLiked = currentPost.likes.some(like =>
+                String(like.userId) === String(currentUser.userId)
+            );
+            if (userLiked) {
+                isLiked = true;
+                likeBtn.classList.add('liked');
+                console.log('[Post] User has already liked this post (found in array)');
+            } else {
+                isLiked = false;
+                likeBtn.classList.remove('liked');
+            }
         } else {
             isLiked = false;
             likeBtn.classList.remove('liked');
