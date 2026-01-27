@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const API_BASE_URL = 'http://localhost:8000';
 
     // URL에서 게시글 ID 추출
+    // URL에서 게시글 ID 추출
     const urlParams = new URLSearchParams(window.location.search);
     const postId = urlParams.get('id');
 

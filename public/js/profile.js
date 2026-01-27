@@ -164,7 +164,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const payload = {
             nickname: nickname
-            // 이미지 업로드 API 미구현으로 profileImage는 제외
         };
 
         try {

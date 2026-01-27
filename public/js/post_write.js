@@ -74,6 +74,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const API_BASE_URL = 'http://localhost:8000';
 
+
+
     // ==========================================
     // 2. 헬퍼 함수
     // ==========================================

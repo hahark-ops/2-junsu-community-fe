@@ -126,6 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
     profileImageInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (file) {
+            // 1. 미리보기 표시
             const reader = new FileReader();
             reader.onload = (e) => {
                 profileImgElement.src = e.target.result;
@@ -325,6 +326,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 6. 회원가입 제출
     const API_BASE_URL = 'http://localhost:8000';
+
 
     signupBtn.addEventListener('click', async () => {
         if (signupBtn.disabled) return;
