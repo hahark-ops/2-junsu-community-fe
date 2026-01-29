@@ -234,7 +234,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const uploadData = await uploadResponse.json();
                 postImage = uploadData.fileUrl;
-                console.log("Uploaded Image URL:", postImage);
+
 
             } catch (error) {
                 console.error('Image upload error:', error);
@@ -250,8 +250,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         try {
-            console.log('=== 게시글 작성 요청 ===');
-            console.log('Payload:', payload);
+
 
             const response = await fetch(`${API_BASE_URL}/v1/posts`, {
                 method: 'POST',
@@ -262,9 +261,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify(payload)
             });
 
-            console.log('Response Status:', response.status);
             const data = await response.json();
-            console.log('Response Data:', data);
 
             if (response.status === 201) {
                 showCustomModal('게시글이 작성되었습니다.', () => {
