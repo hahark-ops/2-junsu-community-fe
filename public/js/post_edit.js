@@ -66,7 +66,8 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             try {
                 await fetch(`${API_BASE_URL}/v1/auth/logout`, { method: 'POST', credentials: 'include' });
-                showCustomModal('로그아웃 되었습니다.', () => { window.location.href = '/login.html'; });
+                // showCustomModal('로그아웃 되었습니다.', () => { window.location.href = '/login.html'; });
+                window.location.href = '/login.html';
             } catch (e) { console.error(e); }
         });
     }

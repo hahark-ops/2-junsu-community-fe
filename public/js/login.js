@@ -113,12 +113,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     localStorage.setItem('accessToken', token); // 호환성 유지
                 }
 
-                showCustomModal('로그인 성공!', () => {
-                    window.location.href = '/posts';
-                });
+                // showCustomModal('로그인 성공!', () => {
+                //     window.location.href = '/posts';
+                // });
+                window.location.href = '/posts';
             } else {
                 // 로그인 실패 (서버에서 보낸 에러 메시지 표시)
-                showCustomModal(`로그인 실패: ${result.message}`);
+                showCustomModal(`로그인 실패\n${result.message}`);
                 loginBtn.textContent = '로그인';
                 loginBtn.disabled = false;
                 loginBtn.classList.add('active');
