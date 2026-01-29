@@ -4,7 +4,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const API_BASE_URL = 'http://localhost:8000';
 
     // URL에서 게시글 ID 추출
-    // URL에서 게시글 ID 추출
     const urlParams = new URLSearchParams(window.location.search);
     const postId = urlParams.get('id');
 
@@ -293,8 +292,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         try {
-            console.log('=== 게시글 수정 요청 ===');
-            console.log('Payload:', payload);
+
 
             const response = await fetch(`${API_BASE_URL}/v1/posts/${postId}`, {
                 method: 'PATCH',
@@ -305,9 +303,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify(payload)
             });
 
-            console.log('Response Status:', response.status);
             const data = await response.json();
-            console.log('Response Data:', data);
 
             if (response.ok) {
                 showCustomModal('게시글이 수정되었습니다.', () => {

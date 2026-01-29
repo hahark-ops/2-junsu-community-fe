@@ -370,8 +370,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         try {
-            console.log('=== 회원가입 요청 시작 ===');
-            console.log('Payload:', payload);
+
 
             const response = await fetch(`${API_BASE_URL}/v1/auth/signup`, {
                 method: 'POST',
@@ -381,23 +380,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify(payload)
             });
 
-            console.log('Response Status:', response.status);
             const data = await response.json();
-            console.log('Response Data:', data);
 
             if (response.status === 201) {
-                console.log('=== 회원가입 성공 ===');
                 showCustomModal("회원가입이 완료되었습니다.\n로그인 화면으로 이동합니다.", () => {
                     window.location.href = 'login.html';
                 });
             } else {
-                console.log('=== 회원가입 실패 ===');
                 showCustomModal(data.message || "회원가입에 실패했습니다.");
             }
 
         } catch (error) {
-            console.error('=== 통신 에러 ===');
-            console.error('Error details:', error);
+            console.error('Signup error:', error);
             showCustomModal("서버 통신 중 오류가 발생했습니다.");
         }
     });

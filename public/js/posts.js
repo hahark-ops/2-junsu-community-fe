@@ -152,7 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         // 백엔드 응답 매핑
-        // 현재 백엔드가 좋아요/댓글 수를 반환하지 않아 0으로 기본 설정
+        // 좋아요/댓글 수 포맷팅
         const likesStr = formatNumber(post.likeCount || 0);
         const commentsStr = formatNumber(post.commentCount || 0);
         const viewsStr = formatNumber(post.viewCount || 0);

@@ -134,9 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (error) {
             console.error('Failed to load user:', error);
-            if (!cachedUserData) { // Only show modal if no cached data was available
-                showCustomModal('사용자 정보를 불러오는데 실패했습니다.');
-            }
+            showCustomModal('사용자 정보를 불러오는데 실패했습니다.');
         }
     }
 
@@ -224,8 +222,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            console.log('=== 프로필 수정 요청 ===');
-            console.log('Payload:', payload);
+
 
             const response = await fetch(`${API_BASE_URL}/v1/users/${currentUser.userId}`, {
                 method: 'PATCH',
@@ -236,9 +233,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify(payload)
             });
 
-            console.log('Response Status:', response.status);
             const data = await response.json();
-            console.log('Response Data:', data);
 
             if (response.ok) {
                 showToast('수정 완료');
