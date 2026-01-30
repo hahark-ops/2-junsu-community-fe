@@ -9,6 +9,31 @@
 const API_BASE_URL = 'http://localhost:8000';
 
 // ===========================================
+// 2. 프로필 이미지 즉시 로드 (깜빡임 방지)
+// ===========================================
+// DOMContentLoaded 전에 실행되도록 함수로 감싸지 않음
+(function loadProfileImageImmediately() {
+    const cachedProfileImage = localStorage.getItem('profileImage');
+    if (cachedProfileImage) {
+        // DOM이 준비되면 즉시 적용
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                const profileIcon = document.getElementById('profileIcon');
+                if (profileIcon) {
+                    profileIcon.style.backgroundImage = `url(${cachedProfileImage})`;
+                }
+            });
+        } else {
+            // 이미 DOM이 준비된 경우
+            const profileIcon = document.getElementById('profileIcon');
+            if (profileIcon) {
+                profileIcon.style.backgroundImage = `url(${cachedProfileImage})`;
+            }
+        }
+    }
+})();
+
+// ===========================================
 // 2. 날짜 포맷 함수
 // ===========================================
 function formatDate(dateString) {
