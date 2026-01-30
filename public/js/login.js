@@ -1,12 +1,11 @@
+// login.js - API_BASE_URL, showCustomModal은 common.js에서 제공
+
 document.addEventListener('DOMContentLoaded', () => {
     const emailInput = document.getElementById('email');
     const passwordInput = document.getElementById('password');
     const loginBtn = document.getElementById('loginBtn');
     const emailError = document.getElementById('emailError');
     const passwordError = document.getElementById('passwordError');
-
-    // 백엔드 API 주소 (FastAPI 서버)
-    const API_BASE_URL = 'http://localhost:8000';
 
     // 정규식 패턴
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

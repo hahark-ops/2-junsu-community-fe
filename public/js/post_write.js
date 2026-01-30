@@ -1,64 +1,6 @@
-// post_write.js - 게시글 작성 로직
+// post_write.js - showCustomModal, API_BASE_URL는 common.js에서 제공
 
 document.addEventListener('DOMContentLoaded', () => {
-
-    // 커스텀 모달 함수 (signup.js에서 재사용)
-    function showCustomModal(message, onConfirm) {
-        const overlay = document.createElement('div');
-        overlay.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-        `;
-
-        const modal = document.createElement('div');
-        modal.style.cssText = `
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            text-align: center;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-            max-width: 300px;
-        `;
-
-        const msg = document.createElement('p');
-        msg.textContent = message;
-        msg.style.cssText = `
-            margin: 0 0 20px 0;
-            font-size: 16px;
-            line-height: 1.5;
-            white-space: pre-line;
-        `;
-
-        const confirmBtn = document.createElement('button');
-        confirmBtn.textContent = '확인';
-        confirmBtn.style.cssText = `
-            background: #7F6AEE;
-            color: white;
-            border: none;
-            padding: 10px 30px;
-            border-radius: 5px;
-            font-size: 14px;
-            cursor: pointer;
-        `;
-        confirmBtn.addEventListener('click', () => {
-            document.body.removeChild(overlay);
-            if (onConfirm) onConfirm();
-        });
-
-        modal.appendChild(msg);
-        modal.appendChild(confirmBtn);
-        overlay.appendChild(modal);
-        document.body.appendChild(overlay);
-        confirmBtn.focus();
-    }
 
     // ==========================================
     // 0. 헤더 프로필 설정
@@ -130,9 +72,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const fileSelectBtn = document.getElementById('fileSelectBtn');
     const fileNameSpan = document.getElementById('fileName');
     const submitBtn = document.getElementById('submitBtn');
-
-    const API_BASE_URL = 'http://localhost:8000';
-
 
 
     // ==========================================

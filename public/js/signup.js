@@ -1,70 +1,6 @@
-// signup.js - 회원가입 로직
+// signup.js - showCustomModal, API_BASE_URL는 common.js에서 제공
 
 document.addEventListener('DOMContentLoaded', () => {
-
-    // 커스텀 모달 함수
-    function showCustomModal(message, onConfirm) {
-        // 오버레이 생성
-        const overlay = document.createElement('div');
-        overlay.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-        `;
-
-        // 모달 박스 생성
-        const modal = document.createElement('div');
-        modal.style.cssText = `
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            text-align: center;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-            max-width: 300px;
-        `;
-
-        // 메시지
-        const msg = document.createElement('p');
-        msg.textContent = message;
-        msg.style.cssText = `
-            margin: 0 0 20px 0;
-            font-size: 16px;
-            line-height: 1.5;
-            white-space: pre-line;
-        `;
-
-        // 확인 버튼
-        const confirmBtn = document.createElement('button');
-        confirmBtn.textContent = '확인';
-        confirmBtn.style.cssText = `
-            background: #7F6AEE;
-            color: white;
-            border: none;
-            padding: 10px 30px;
-            border-radius: 5px;
-            font-size: 14px;
-            cursor: pointer;
-        `;
-        confirmBtn.addEventListener('click', () => {
-            document.body.removeChild(overlay);
-            if (onConfirm) onConfirm();
-        });
-
-        modal.appendChild(msg);
-        modal.appendChild(confirmBtn);
-        overlay.appendChild(modal);
-        document.body.appendChild(overlay);
-
-        // 버튼에 포커스
-        confirmBtn.focus();
-    }
 
     // 1. 요소 가져오기
     const signupForm = document.getElementById('signupForm');
@@ -325,8 +261,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // 6. 회원가입 제출
-    const API_BASE_URL = 'http://localhost:8000';
-
 
     signupBtn.addEventListener('click', async () => {
         if (signupBtn.disabled) return;

@@ -1,8 +1,6 @@
-// password.js - 비밀번호 수정 페이지 로직
+// password.js - API_BASE_URL, showCustomModal은 common.js에서 제공
 
 document.addEventListener('DOMContentLoaded', () => {
-    const API_BASE_URL = 'http://localhost:8000';
-
     // ==========================================
     // 1. 요소 가져오기
     // ==========================================

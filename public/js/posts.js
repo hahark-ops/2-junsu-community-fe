@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:8000';
+// posts.js - API_BASE_URL, formatNumber, formatDate는 common.js에서 제공
 
 document.addEventListener('DOMContentLoaded', () => {
     const postContainer = document.getElementById('postList');
@@ -12,34 +12,12 @@ document.addEventListener('DOMContentLoaded', () => {
     let isLoading = false;
     let isLastPage = false;
 
-    // 유틸리티 함수
-    function formatNumber(num) {
-        if (!num) return '0';
-        if (num >= 100000) return (num / 1000).toFixed(0) + 'k';
-        if (num >= 10000) return (num / 1000).toFixed(0) + 'k';
-        if (num >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
-        return num.toString();
-    }
-
     // 로컬 스토리지에서 사용자 정보 즉시 로드 (깜박임 방지)
     function loadUserFromStorage() {
         const profileImage = localStorage.getItem('profileImage');
         if (profileImage) {
             updateProfileIcon(profileImage);
         }
-    }
-
-    function formatDate(dateString) {
-        if (!dateString) return '';
-        const d = new Date(dateString);
-        const pad = (n) => n.toString().padStart(2, '0');
-        const yyyy = d.getFullYear();
-        const mm = pad(d.getMonth() + 1);
-        const dd = pad(d.getDate());
-        const hh = pad(d.getHours());
-        const min = pad(d.getMinutes());
-        const ss = pad(d.getSeconds());
-        return `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
     }
 
     // 1. 백엔드에서 게시글 목록 가져오기

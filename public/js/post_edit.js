@@ -1,7 +1,6 @@
-// post_edit.js - 게시글 수정 페이지 로직
+// post_edit.js - API_BASE_URL, showCustomModal은 common.js에서 제공
 
 document.addEventListener('DOMContentLoaded', () => {
-    const API_BASE_URL = 'http://localhost:8000';
 
     // URL에서 게시글 ID 추출
     const urlParams = new URLSearchParams(window.location.search);
@@ -114,65 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
             submitBtn.classList.remove('active');
         }
     }
-
-    // 커스텀 모달 함수
-    function showCustomModal(message, onConfirm) {
-        const overlay = document.createElement('div');
-        overlay.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-        `;
-
-        const modal = document.createElement('div');
-        modal.style.cssText = `
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            text-align: center;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-            max-width: 300px;
-        `;
-
-        const msg = document.createElement('p');
-        msg.textContent = message;
-        msg.style.cssText = `
-            margin: 0 0 20px 0;
-            font-size: 16px;
-            line-height: 1.5;
-            white-space: pre-line;
-        `;
-
-        const confirmBtn = document.createElement('button');
-        confirmBtn.textContent = '확인';
-        confirmBtn.style.cssText = `
-            background: #7F6AEE;
-            color: white;
-            border: none;
-            padding: 10px 30px;
-            border-radius: 5px;
-            font-size: 14px;
-            cursor: pointer;
-        `;
-        confirmBtn.addEventListener('click', () => {
-            document.body.removeChild(overlay);
-            if (onConfirm) onConfirm();
-        });
-
-        modal.appendChild(msg);
-        modal.appendChild(confirmBtn);
-        overlay.appendChild(modal);
-        document.body.appendChild(overlay);
-        confirmBtn.focus();
-    }
-
+    // showCustomModal은 common.js에서 제공
     // ==========================================
     // 3. 기존 게시글 데이터 로드
     // ==========================================

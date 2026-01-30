@@ -1,7 +1,6 @@
-// post_detail.js - 게시글 상세 페이지 로직
+// post_detail.js - API_BASE_URL, formatDate는 common.js에서 제공
 
 document.addEventListener('DOMContentLoaded', () => {
-    const API_BASE_URL = 'http://localhost:8000';
 
     // URL에서 게시글 ID 추출
     const urlParams = new URLSearchParams(window.location.search);
@@ -88,17 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return num.toString();
     }
 
-    function formatDate(dateStr) {
-        if (!dateStr) return '';
-        const date = new Date(dateStr);
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        const hours = String(date.getHours()).padStart(2, '0');
-        const mins = String(date.getMinutes()).padStart(2, '0');
-        const secs = String(date.getSeconds()).padStart(2, '0');
-        return `${year}-${month}-${day} ${hours}:${mins}:${secs}`;
-    }
+    // formatDate는 common.js에서 제공
 
     function showModal(title, onConfirm) {
         modalTitle.textContent = title;
