@@ -196,4 +196,17 @@ document.addEventListener('DOMContentLoaded', () => {
     loadUserFromStorage(); // 스토리지에서 먼저 로드해서 깜박임 방지
     fetchUserProfile(); // 백엔드에서 최신 정보 확인
     fetchPosts(); // 초기 게시글 로드
+
+    // ==========================================
+    // 브라우저 뒤로가기 시 데이터 새로고침 (bfcache 대응)
+    // ==========================================
+    window.addEventListener('pageshow', (event) => {
+        if (event.persisted) {
+            // bfcache에서 복원된 경우 - 게시글 목록 다시 로드
+            offset = 0;
+            isLastPage = false;
+            postContainer.innerHTML = '';
+            fetchPosts();
+        }
+    });
 });

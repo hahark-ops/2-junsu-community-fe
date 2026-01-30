@@ -560,4 +560,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     init();
+
+    // ==========================================
+    // 브라우저 뒤로가기 시 데이터 새로고침 (bfcache 대응)
+    // ==========================================
+    window.addEventListener('pageshow', (event) => {
+        if (event.persisted) {
+            // bfcache에서 복원된 경우 - 게시글 상세 및 댓글 다시 로드
+            init();
+        }
+    });
 });
