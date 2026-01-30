@@ -53,7 +53,12 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             try {
                 await fetch(`${API_BASE_URL}/v1/auth/logout`, { method: 'POST', credentials: 'include' });
-                // showCustomModal('로그아웃 되었습니다.', () => { window.location.href = '/login.html'; });
+                // localStorage 정리 (다른 사용자 로그인 시 이전 데이터 방지)
+                localStorage.removeItem('profileImage');
+                localStorage.removeItem('nickname');
+                localStorage.removeItem('email');
+                localStorage.removeItem('userId');
+                localStorage.removeItem('user');
                 window.location.href = '/login.html';
             } catch (e) { console.error(e); }
         });

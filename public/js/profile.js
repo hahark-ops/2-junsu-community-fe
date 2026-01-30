@@ -81,6 +81,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 method: 'POST',
                 credentials: 'include'
             });
+            // localStorage 정리 (다른 사용자 로그인 시 이전 데이터 방지)
+            localStorage.removeItem('profileImage');
+            localStorage.removeItem('nickname');
+            localStorage.removeItem('email');
+            localStorage.removeItem('userId');
+            localStorage.removeItem('user');
             // showCustomModal('로그아웃 되었습니다.', () => {
             //     window.location.href = 'login.html';
             // });
@@ -234,6 +240,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
 
             if (response.ok) {
+                // localStorage 및 UI 업데이트
+                if (newProfileImageUrl) {
+                    localStorage.setItem('profileImage', newProfileImageUrl);
+                    // 헤더 프로필 아이콘도 즉시 업데이트
+                    if (profileIcon) {
+                        profileIcon.style.backgroundImage = `url(${newProfileImageUrl})`;
+                    }
+                }
+                if (nickname) {
+                    localStorage.setItem('nickname', nickname);
+                }
                 showToast('수정 완료');
             } else if (response.status === 409) {
                 showHelper('*중복된 닉네임 입니다.');

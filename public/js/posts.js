@@ -109,9 +109,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 method: 'POST',
                 credentials: 'include'
             });
-            // showCustomModal('로그아웃 되었습니다.', () => {
-            //     window.location.href = '/login.html';
-            // });
+            // localStorage 정리 (다른 사용자 로그인 시 이전 데이터 방지)
+            localStorage.removeItem('profileImage');
+            localStorage.removeItem('nickname');
+            localStorage.removeItem('email');
+            localStorage.removeItem('userId');
+            localStorage.removeItem('user');
             window.location.href = '/login.html';
         } catch (error) {
             console.error('Logout failed:', error);
