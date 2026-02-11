@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const LIMIT = 10;
     let isLoading = false;
     let isLastPage = false;
+    let hasInitialPageShow = false;
 
     // 로컬 스토리지에서 사용자 정보 즉시 로드 (깜박임 방지)
     function loadUserFromStorage() {
@@ -64,6 +65,17 @@ document.addEventListener('DOMContentLoaded', () => {
         } finally {
             isLoading = false;
         }
+    }
+
+    function resetAndReloadPosts() {
+        offset = 0;
+        isLoading = false;
+        isLastPage = false;
+        postContainer.innerHTML = '';
+        if (scrollTrigger) {
+            scrollTrigger.style.display = 'block';
+        }
+        fetchPosts();
     }
 
     // 2. 사용자 프로필 가져오기
@@ -198,18 +210,22 @@ document.addEventListener('DOMContentLoaded', () => {
     // 초기화
     loadUserFromStorage(); // 스토리지에서 먼저 로드해서 깜박임 방지
     fetchUserProfile(); // 백엔드에서 최신 정보 확인
-    fetchPosts(); // 초기 게시글 로드
+    resetAndReloadPosts(); // 초기 게시글 로드
 
     // ==========================================
     // 브라우저 뒤로가기 시 데이터 새로고침 (bfcache 대응)
     // ==========================================
     window.addEventListener('pageshow', (event) => {
-        if (event.persisted) {
-            // bfcache에서 복원된 경우 - 게시글 목록 다시 로드
-            offset = 0;
-            isLastPage = false;
-            postContainer.innerHTML = '';
-            fetchPosts();
+        // 첫 pageshow(초기 로드)는 이미 resetAndReloadPosts를 호출했으므로 건너뜀.
+        if (!hasInitialPageShow) {
+            hasInitialPageShow = true;
+            return;
+        }
+
+        const navEntries = performance.getEntriesByType('navigation');
+        const navType = navEntries.length > 0 ? navEntries[0].type : '';
+        if (event.persisted || navType === 'back_forward') {
+            resetAndReloadPosts();
         }
     });
 });
