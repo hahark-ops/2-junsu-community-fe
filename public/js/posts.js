@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let wasHidden = false;
     let lastReloadAt = 0;
     const RELOAD_COOLDOWN_MS = 800;
+    let feedVersion = 0;
 
     // 로컬 스토리지에서 사용자 정보 즉시 로드 (깜박임 방지)
     function loadUserFromStorage() {
@@ -28,13 +29,20 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isLoading || isLastPage) return;
 
         isLoading = true;
+        const requestFeedVersion = feedVersion;
+        const requestOffset = offset;
 
         try {
             const cacheBuster = Date.now();
-            const response = await fetch(`${API_BASE_URL}/v1/posts?offset=${offset}&limit=${LIMIT}&_ts=${cacheBuster}`, {
+            const response = await fetch(`${API_BASE_URL}/v1/posts?offset=${requestOffset}&limit=${LIMIT}&_ts=${cacheBuster}`, {
                 cache: 'no-store'
             });
             const result = await response.json();
+
+            // 이전 reload 사이클에서 온 늦은 응답은 무시한다.
+            if (requestFeedVersion !== feedVersion) {
+                return;
+            }
 
             if (response.ok) {
                 const posts = result.data.posts;
@@ -42,7 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (posts.length === 0) {
                     isLastPage = true;
-                    if (offset === 0) {
+                    if (requestOffset === 0) {
                         postContainer.innerHTML = '<div style="text-align:center; padding: 20px;">게시글이 없습니다. 첫 글을 작성해보세요!</div>';
                     }
                     return;
@@ -54,7 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     postContainer.appendChild(postEl);
                 });
 
-                offset += posts.length;
+                offset = requestOffset + posts.length;
 
                 // 더 이상 불러올 데이터가 없으면 중단
                 if (offset >= totalCount) {
@@ -73,10 +81,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function resetAndReloadPosts() {
+        feedVersion += 1;
         offset = 0;
         isLoading = false;
         isLastPage = false;
         postContainer.innerHTML = '';
+        lastReloadAt = Date.now();
         if (scrollTrigger) {
             scrollTrigger.style.display = 'block';
         }
@@ -88,7 +98,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (now - lastReloadAt < RELOAD_COOLDOWN_MS) {
             return;
         }
-        lastReloadAt = now;
         resetAndReloadPosts();
     }
 
