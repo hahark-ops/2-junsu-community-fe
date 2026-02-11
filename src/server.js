@@ -2,7 +2,8 @@ const express = require('express');
 const app = express();
 const path = require('path');
 
-const port = 3000;
+const port = Number(process.env.PORT || 3000);
+const backendTarget = process.env.BACKEND_TARGET || 'http://127.0.0.1:8000';
 
 // 정적 파일(CSS, JS 등)을 제공하기 위한 설정 (나중에 필요함)
 const { createProxyMiddleware } = require('http-proxy-middleware');
@@ -14,12 +15,13 @@ app.use((req, res, next) => {
 });
 
 // 1. 프록시 설정 (정적 파일보다 먼저 설정!)
-console.log('Setting up proxy to: http://52.78.24.198:8000');
+console.log(`Setting up proxy to: ${backendTarget}`);
 
 // http-proxy-middleware v3: context 인자가 사라지고 pathFilter 옵션으로 변경됨
 const backendProxy = createProxyMiddleware({
-    target: 'http://52.78.24.198:8000',
+    target: backendTarget,
     changeOrigin: true,
+    xfwd: true,
     pathFilter: ['/v1', '/uploads'], // 여기서 필터링 설정!
     logger: console,
     onProxyReq: (proxyReq, req, res) => {
