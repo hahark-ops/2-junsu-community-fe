@@ -15,10 +15,13 @@ app.use((req, res, next) => {
 
 // 1. 프록시 설정 (정적 파일보다 먼저 설정!)
 console.log('Setting up proxy to: http://52.78.24.198:8000');
-const backendProxy = createProxyMiddleware(['/v1', '/uploads'], {
+
+// http-proxy-middleware v3: context 인자가 사라지고 pathFilter 옵션으로 변경됨
+const backendProxy = createProxyMiddleware({
     target: 'http://52.78.24.198:8000',
     changeOrigin: true,
-    logger: console, // 프록시 자체 로그 켜기
+    pathFilter: ['/v1', '/uploads'], // 여기서 필터링 설정!
+    logger: console,
     onProxyReq: (proxyReq, req, res) => {
         console.log(`[Proxy] Proxying ${req.method} ${req.url} -> Backend`);
     },
