@@ -5,7 +5,7 @@ const path = require('path');
 const port = 3000;
 
 // 정적 파일(CSS, JS 등)을 제공하기 위한 설정 (나중에 필요함)
-
+const { createProxyMiddleware } = require('http-proxy-middleware');
 
 // 0. 로깅 미들웨어 (가장 먼저!)
 app.use((req, res, next) => {
