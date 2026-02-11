@@ -15,7 +15,7 @@ app.use((req, res, next) => {
 
 // 1. 프록시 설정 (정적 파일보다 먼저 설정!)
 console.log('Setting up proxy to: http://52.78.24.198:8000');
-const backendProxy = createProxyMiddleware({
+const backendProxy = createProxyMiddleware(['/v1', '/uploads'], {
     target: 'http://52.78.24.198:8000',
     changeOrigin: true,
     logger: console, // 프록시 자체 로그 켜기
@@ -31,8 +31,7 @@ const backendProxy = createProxyMiddleware({
     }
 });
 
-app.use('/v1', backendProxy);
-app.use('/uploads', backendProxy);
+app.use(backendProxy);
 
 // 2. 정적 파일 설정
 app.use(express.static(path.join(__dirname, '../public'), { index: false }));
