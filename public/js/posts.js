@@ -11,7 +11,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const LIMIT = 10;
     let isLoading = false;
     let isLastPage = false;
-    let hasInitialPageShow = false;
+    let wasHidden = false;
+    let lastReloadAt = 0;
+    const RELOAD_COOLDOWN_MS = 800;
 
     // 로컬 스토리지에서 사용자 정보 즉시 로드 (깜박임 방지)
     function loadUserFromStorage() {
@@ -28,7 +30,10 @@ document.addEventListener('DOMContentLoaded', () => {
         isLoading = true;
 
         try {
-            const response = await fetch(`${API_BASE_URL}/v1/posts?offset=${offset}&limit=${LIMIT}`);
+            const cacheBuster = Date.now();
+            const response = await fetch(`${API_BASE_URL}/v1/posts?offset=${offset}&limit=${LIMIT}&_ts=${cacheBuster}`, {
+                cache: 'no-store'
+            });
             const result = await response.json();
 
             if (response.ok) {
@@ -76,6 +81,15 @@ document.addEventListener('DOMContentLoaded', () => {
             scrollTrigger.style.display = 'block';
         }
         fetchPosts();
+    }
+
+    function reloadPostsIfNeeded() {
+        const now = Date.now();
+        if (now - lastReloadAt < RELOAD_COOLDOWN_MS) {
+            return;
+        }
+        lastReloadAt = now;
+        resetAndReloadPosts();
     }
 
     // 2. 사용자 프로필 가져오기
@@ -216,16 +230,23 @@ document.addEventListener('DOMContentLoaded', () => {
     // 브라우저 뒤로가기 시 데이터 새로고침 (bfcache 대응)
     // ==========================================
     window.addEventListener('pageshow', (event) => {
-        // 첫 pageshow(초기 로드)는 이미 resetAndReloadPosts를 호출했으므로 건너뜀.
-        if (!hasInitialPageShow) {
-            hasInitialPageShow = true;
-            return;
-        }
-
         const navEntries = performance.getEntriesByType('navigation');
         const navType = navEntries.length > 0 ? navEntries[0].type : '';
         if (event.persisted || navType === 'back_forward') {
-            resetAndReloadPosts();
+            reloadPostsIfNeeded();
+        }
+    });
+
+    // 일부 브라우저/상황에서는 pageshow만으로 감지가 불안정할 수 있어 보조 처리
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+            wasHidden = true;
+            return;
+        }
+
+        if (document.visibilityState === 'visible' && wasHidden) {
+            wasHidden = false;
+            reloadPostsIfNeeded();
         }
     });
 });
