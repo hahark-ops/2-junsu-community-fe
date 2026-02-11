@@ -10,10 +10,25 @@ const { createProxyMiddleware } = require('http-proxy-middleware');
 // 정적 파일(CSS, JS 등)을 제공하기 위한 설정 (나중에 필요함)
 app.use(express.static(path.join(__dirname, '../public'), { index: false }));
 
+// 로깅 미들웨어 (요청 확인용)
+app.use((req, res, next) => {
+    console.log(`[Request] ${req.method} ${req.url}`);
+    next();
+});
+
 // 프록시 설정 (브라우저 -> 프론트서버 -> 백엔드서버)
 const backendProxy = createProxyMiddleware({
     target: 'http://52.78.24.198:8000',
-    changeOrigin: true
+    changeOrigin: true,
+    onProxyReq: (proxyReq, req, res) => {
+        console.log(`[Proxy] Proxying ${req.method} ${req.url} -> http://52.78.24.198:8000${req.url}`);
+    },
+    onProxyRes: (proxyRes, req, res) => {
+        console.log(`[Proxy] Response from Backend: ${proxyRes.statusCode}`);
+    },
+    onError: (err, req, res) => {
+        console.error('[Proxy] Error:', err);
+    }
 });
 
 app.use('/v1', backendProxy);
