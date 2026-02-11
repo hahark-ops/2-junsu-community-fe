@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/hahark-ops/2-junsu-community-fe#readme",
   "dependencies": {
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "http-proxy-middleware": "^3.0.5"
   }
 }
