@@ -97,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             // API 중복 체크
             try {
-                const response = await fetch(`http://localhost:8000/v1/auth/emails/availability?email=${encodeURIComponent(value)}`);
+                const response = await fetch(`${API_BASE_URL}/v1/auth/emails/availability?email=${encodeURIComponent(value)}`);
                 const data = await response.json();
 
                 if (response.ok) {
@@ -223,7 +223,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             // API 중복 체크
             try {
-                const response = await fetch(`http://localhost:8000/v1/auth/nicknames/availability?nickname=${encodeURIComponent(value)}`);
+                const response = await fetch(`${API_BASE_URL}/v1/auth/nicknames/availability?nickname=${encodeURIComponent(value)}`);
                 const data = await response.json();
 
                 if (response.ok) {
