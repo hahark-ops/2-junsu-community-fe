@@ -1,6 +1,7 @@
 const express = require('express');
 const app = express();
 const path = require('path');
+const projectRoot = path.join(__dirname, '..');
 
 const port = Number(process.env.PORT || 3000);
 const backendTarget = process.env.BACKEND_TARGET || 'http://127.0.0.1:8000';
@@ -39,15 +40,15 @@ const backendProxy = createProxyMiddleware({
 app.use(backendProxy);
 
 // 2. 정적 파일 설정
-app.use(express.static(path.join(__dirname, '../public'), { index: false }));
+app.use(express.static(projectRoot, { index: false }));
 
 // 3. 루트 및 페이지 라우트
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public', 'login.html'));
+    res.sendFile(path.join(projectRoot, 'login.html'));
 });
 
 app.get('/posts', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public', 'index.html'));
+    res.sendFile(path.join(projectRoot, 'index.html'));
 });
 
 // 4. Fallback (404) 핸들러

@@ -1,17 +1,6 @@
-// post_edit.js - API_BASE_URL, showCustomModal은 common.js에서 제공
+// post_write.js - showCustomModal, API_BASE_URL는 common.js에서 제공
 
 document.addEventListener('DOMContentLoaded', () => {
-
-    // URL에서 게시글 ID 추출
-    const urlParams = new URLSearchParams(window.location.search);
-    const postId = urlParams.get('id');
-
-    if (!postId) {
-        showCustomModal('잘못된 접근입니다.', () => {
-            window.location.href = 'index.html';
-        });
-        return;
-    }
 
     // ==========================================
     // 0. 헤더 프로필 설정
@@ -70,7 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 localStorage.removeItem('email');
                 localStorage.removeItem('userId');
                 localStorage.removeItem('user');
-                window.location.href = '/login.html';
+                window.location.href = 'login.html';
             } catch (e) { console.error(e); }
         });
     }
@@ -80,7 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     // 1. 요소 가져오기
     // ==========================================
-    const postEditForm = document.getElementById('postEditForm');
+    const postWriteForm = document.getElementById('postWriteForm');
     const titleInput = document.getElementById('title');
     const contentInput = document.getElementById('content');
     const helperText = document.getElementById('helperText');
@@ -89,9 +78,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const fileNameSpan = document.getElementById('fileName');
     const submitBtn = document.getElementById('submitBtn');
 
-    // 상태 변수
-    let originalPost = null;
-    let currentFileUrl = null;
 
     // ==========================================
     // 2. 헬퍼 함수
@@ -118,76 +104,42 @@ document.addEventListener('DOMContentLoaded', () => {
             submitBtn.classList.remove('active');
         }
     }
-    // showCustomModal은 common.js에서 제공
-    // ==========================================
-    // 3. 기존 게시글 데이터 로드
-    // ==========================================
-    async function loadPostData() {
-        try {
-            const response = await fetch(`${API_BASE_URL}/v1/posts/${postId}?increase_view=false`, {
-                credentials: 'include'
-            });
-
-            if (!response.ok) {
-                showCustomModal('게시글을 찾을 수 없습니다.', () => {
-                    window.location.href = 'index.html';
-                });
-                return;
-            }
-
-            const result = await response.json();
-            originalPost = result.data || result;
-
-            // 폼에 기존 데이터 채우기
-            titleInput.value = originalPost.title || '';
-            contentInput.value = originalPost.content || '';
-
-            // 기존 이미지 파일명 표시
-            if (originalPost.fileUrl) {
-                currentFileUrl = originalPost.fileUrl;
-                const fileName = originalPost.fileUrl.split('/').pop();
-                fileNameSpan.textContent = fileName || '기존 파일';
-                fileNameSpan.classList.add('selected');
-            } else {
-                fileNameSpan.textContent = '파일을 선택해주세요.';
-            }
-
-            checkFormValidity();
-
-        } catch (error) {
-            console.error('Failed to load post:', error);
-            showCustomModal('게시글을 불러오는데 실패했습니다.');
-        }
-    }
 
     // ==========================================
-    // 4. 이벤트 핸들러
+    // 3. 이벤트 핸들러 (이벤트 처리)
     // ==========================================
+
+    // 제목 입력 - 26자 제한은 HTML maxlength로 처리됨
     titleInput.addEventListener('input', () => {
         hideHelper();
         checkFormValidity();
     });
 
+    // 내용 입력
     contentInput.addEventListener('input', () => {
         hideHelper();
         checkFormValidity();
     });
 
+    // 이미지 파일 선택 버튼 클릭
     fileSelectBtn.addEventListener('click', () => {
         imageInput.click();
     });
 
+    // 이미지 파일 선택 완료
     imageInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (file) {
             fileNameSpan.textContent = file.name;
             fileNameSpan.classList.add('selected');
-            currentFileUrl = null; // 새 파일 선택 시 기존 URL 초기화
+        } else {
+            fileNameSpan.textContent = '파일을 선택해주세요.';
+            fileNameSpan.classList.remove('selected');
         }
     });
 
     // ==========================================
-    // 5. 제출 핸들러 - PATCH API
+    // 4. 제출 핸들러 (Fetch API)
     // ==========================================
     submitBtn.addEventListener('click', async () => {
         if (submitBtn.disabled) return;
@@ -195,23 +147,25 @@ document.addEventListener('DOMContentLoaded', () => {
         const title = titleInput.value.trim();
         const content = contentInput.value.trim();
 
+        // 유효성 검사 (이미 버튼 활성화로 체크되지만, 한번 더 확인)
         if (!title || !content) {
             showHelper('* 제목, 내용을 모두 작성해주세요');
             return;
         }
 
-        // 이미지 업로드 로직 (수정 시)
-        let fileUrl = currentFileUrl; // 기본값: 기존 URL 유지
-
+        // 1. 이미지 업로드 (만약 선택된 파일이 있다면)
+        let postImage = null;
         if (imageInput.files[0]) {
             try {
                 const formData = new FormData();
                 formData.append('file', imageInput.files[0]);
                 formData.append('type', 'post');
 
+                // 주의: 파일 업로드는 credentials: 'include'가 필요할 수 있음 (로그인 체크가 있다면)
+                // 하지만 headers에 'Content-Type'을 설정하면 안됨 (브라우저가 자동으로 Boundary 설정)
                 const uploadResponse = await fetch(`${API_BASE_URL}/v1/files/upload`, {
                     method: 'POST',
-                    headers: {},
+                    headers: {}, // Content-Type 자동 설정을 위해 빈 객체 또는 생략
                     credentials: 'include',
                     body: formData
                 });
@@ -223,7 +177,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 const uploadData = await uploadResponse.json();
-                fileUrl = uploadData.fileUrl;
+                postImage = uploadData.fileUrl;
+
+
             } catch (error) {
                 console.error('Image upload error:', error);
                 showHelper("이미지 업로드 중 오류가 발생했습니다.");
@@ -234,47 +190,41 @@ document.addEventListener('DOMContentLoaded', () => {
         const payload = {
             title: title,
             content: content,
-            fileUrl: fileUrl
+            fileUrl: postImage
         };
 
         try {
 
 
-            const response = await fetch(`${API_BASE_URL}/v1/posts/${postId}`, {
-                method: 'PATCH',
+            const response = await fetch(`${API_BASE_URL}/v1/posts`, {
+                method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                credentials: 'include',
+                credentials: 'include', // 세션 쿠키 포함
                 body: JSON.stringify(payload)
             });
 
             const data = await response.json();
 
-            if (response.ok) {
-                showCustomModal('게시글이 수정되었습니다.', () => {
-                    window.location.href = `post_detail.html?id=${postId}`;
+            if (response.status === 201) {
+                showCustomModal('게시글이 작성되었습니다.', () => {
+                    window.location.href = 'index.html';
                 });
             } else if (response.status === 401) {
                 showCustomModal('로그인이 필요합니다.', () => {
                     window.location.href = 'login.html';
                 });
-            } else if (response.status === 403) {
-                showCustomModal('수정 권한이 없습니다.', () => {
-                    window.location.href = `post_detail.html?id=${postId}`;
-                });
             } else {
-                showHelper(data.message || '게시글 수정에 실패했습니다.');
+                showHelper(data.message || '게시글 작성에 실패했습니다.');
             }
 
         } catch (error) {
-            console.error('Post Edit Error:', error);
+            console.error('Post Create Error:', error);
             showHelper('서버 통신 중 오류가 발생했습니다.');
         }
     });
 
-    // ==========================================
-    // 6. 초기화
-    // ==========================================
-    loadPostData();
+    // 초기화
+    checkFormValidity();
 });

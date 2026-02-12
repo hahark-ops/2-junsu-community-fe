@@ -6,7 +6,9 @@
 // ===========================================
 // 1. API 설정
 // ===========================================
-const API_BASE_URL = '';
+const API_BASE_URL = (window.RUNTIME_CONFIG && window.RUNTIME_CONFIG.API_BASE_URL
+    ? String(window.RUNTIME_CONFIG.API_BASE_URL).replace(/\/+$/, '')
+    : '');
 
 // ===========================================
 // 2. 프로필 이미지 즉시 로드 (깜빡임 방지)

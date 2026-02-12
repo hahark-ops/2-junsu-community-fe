@@ -150,7 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.removeItem('email');
             localStorage.removeItem('userId');
             localStorage.removeItem('user');
-            window.location.href = '/login.html';
+            window.location.href = 'login.html';
         } catch (error) {
             console.error('Logout failed:', error);
         }

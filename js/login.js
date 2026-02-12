@@ -123,9 +123,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 // showCustomModal('로그인 성공!', () => {
-                //     window.location.href = '/posts';
+                //     window.location.href = 'index.html';
                 // });
-                window.location.href = '/posts';
+                window.location.href = 'index.html';
             } else {
                 // 로그인 실패 (서버에서 보낸 에러 메시지 표시)
                 const message = result.message || `요청 처리에 실패했습니다. (HTTP ${response.status})`;

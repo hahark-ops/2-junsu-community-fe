@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!postId) {
         showCustomModal('잘못된 접근입니다.', () => {
-            window.location.href = '/posts';
+            window.location.href = 'index.html';
         });
         return;
     }
@@ -147,7 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!response.ok) {
                 showCustomModal('게시글을 찾을 수 없습니다.', () => {
-                    window.location.href = '/posts';
+                    window.location.href = 'index.html';
                 });
                 return;
             }
@@ -190,7 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function toggleLike() {
         if (!currentUser) {
             showCustomModal('로그인이 필요합니다.', () => {
-                window.location.href = '/login.html';
+                window.location.href = 'login.html';
             });
             return;
         }
@@ -248,7 +248,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (response.ok) {
                 showCustomModal('게시글이 삭제되었습니다.', () => {
-                    window.location.href = '/posts';
+                    window.location.href = 'index.html';
                 });
             } else {
                 showCustomModal('삭제에 실패했습니다.');
@@ -264,7 +264,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!currentUser) {
             showCustomModal('로그인이 필요합니다.', () => {
-                window.location.href = '/login.html';
+                window.location.href = 'login.html';
             });
             return;
         }
@@ -546,7 +546,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 localStorage.removeItem('email');
                 localStorage.removeItem('userId');
                 localStorage.removeItem('user');
-                window.location.href = '/login.html';
+                window.location.href = 'login.html';
             } catch (error) {
                 console.error('Logout failed:', error);
             }
