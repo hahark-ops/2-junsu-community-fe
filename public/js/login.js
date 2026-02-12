@@ -9,7 +9,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 정규식 패턴
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,20}$/;
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9])\S{8,20}$/;
+
+    async function parseApiResponse(response) {
+        const text = await response.text();
+        if (!text) return {};
+        try {
+            return JSON.parse(text);
+        } catch (_) {
+            return { message: text };
+        }
+    }
 
     function validateInput() {
         const email = emailInput.value;
@@ -91,7 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 })
             });
 
-            const result = await response.json();
+            const result = await parseApiResponse(response);
 
             if (response.ok) {
                 // 로그인 성공
@@ -118,7 +128,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.location.href = '/posts';
             } else {
                 // 로그인 실패 (서버에서 보낸 에러 메시지 표시)
-                showCustomModal(`로그인 실패\n${result.message}`);
+                const message = result.message || `요청 처리에 실패했습니다. (HTTP ${response.status})`;
+                showCustomModal(`로그인 실패\n${message}`);
                 loginBtn.textContent = '로그인';
                 loginBtn.disabled = false;
                 loginBtn.classList.add('active');

@@ -135,7 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 3. 비밀번호
     // 규칙: 8-20자, 대문자+소문자+숫자+특수문자 포함
-    const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,20}$/;
+    const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9])\S{8,20}$/;
 
     passwordInput.addEventListener('focusout', () => {
         const value = passwordInput.value;

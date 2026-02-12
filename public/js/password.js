@@ -54,11 +54,15 @@ document.addEventListener('DOMContentLoaded', () => {
             return { valid: false, message: '*비밀번호는 8자 이상, 20자 이하이어야 합니다.' };
         }
 
+        if (/\s/.test(password)) {
+            return { valid: false, message: '*비밀번호에 공백을 포함할 수 없습니다.' };
+        }
+
         // 대문자, 소문자, 숫자, 특수문자 각각 최소 1개
         const hasUpper = /[A-Z]/.test(password);
         const hasLower = /[a-z]/.test(password);
         const hasNumber = /[0-9]/.test(password);
-        const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+        const hasSpecial = /[^A-Za-z0-9]/.test(password);
 
         if (!(hasUpper && hasLower && hasNumber && hasSpecial)) {
             return { valid: false, message: '*비밀번호는 대문자, 소문자, 숫자, 특수문자를 각각 최소 1개 포함해야 합니다.' };

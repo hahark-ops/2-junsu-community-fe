@@ -288,6 +288,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (response.ok) {
+                const isEditMode = Boolean(editingCommentId);
                 commentInput.value = '';
                 commentSubmitBtn.textContent = '댓글 등록';
                 commentSubmitBtn.disabled = true;
@@ -297,7 +298,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // 댓글 수 업데이트
                 let count = parseInt(commentCountEl.textContent.replace(/[^0-9]/g, '')) || 0;
-                if (!editingCommentId) { // 새 댓글인 경우
+                if (!isEditMode) { // 새 댓글인 경우
                     commentCountEl.textContent = formatCount(count + 1);
                 }
             } else {

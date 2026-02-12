@@ -124,7 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     async function loadPostData() {
         try {
-            const response = await fetch(`${API_BASE_URL}/v1/posts/${postId}`, {
+            const response = await fetch(`${API_BASE_URL}/v1/posts/${postId}?increase_view=false`, {
                 credentials: 'include'
             });
 
