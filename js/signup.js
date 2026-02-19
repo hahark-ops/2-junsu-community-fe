@@ -27,7 +27,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let isPasswordValid = false;
     let isPasswordConfirmValid = false;
     let isNicknameValid = false;
-    let isProfileImageSelected = false;
 
 
     // 헬퍼 함수
@@ -67,8 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
             reader.onload = (e) => {
                 profileImgElement.src = e.target.result;
                 profilePreview.classList.add('has-image');
-                isProfileImageSelected = true;
-                hideHelper(profileError); // "프로필 사진을 추가해주세요" 메시지 숨김
+                hideHelper(profileError);
                 checkFormValidity();
             };
             reader.readAsDataURL(file);
@@ -76,8 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // 취소하거나 파일이 없는 경우
             profileImgElement.src = '';
             profilePreview.classList.remove('has-image');
-            isProfileImageSelected = false;
-            showHelper(profileError, "* 프로필 사진을 추가해주세요.");
+            showHelper(profileError, "* 프로필 사진은 가입 후 프로필 수정에서 설정할 수 있습니다.");
             checkFormValidity();
         }
     });
@@ -269,38 +266,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const password = passwordInput.value;
         const nickname = nicknameInput.value;
 
-        let profileImageUrl = null;
-        if (isProfileImageSelected && profileImageInput.files[0]) {
-            try {
-                const formData = new FormData();
-                formData.append('file', profileImageInput.files[0]);
-                formData.append('type', 'profile');
-
-                const uploadResponse = await fetch(`${API_BASE_URL}/v1/files/upload`, {
-                    method: 'POST',
-                    body: formData
-                });
-
-                if (!uploadResponse.ok) {
-                    const errData = await uploadResponse.json();
-                    showCustomModal(errData.message || "이미지 업로드에 실패했습니다.");
-                    return;
-                }
-
-                const uploadData = await uploadResponse.json();
-                profileImageUrl = uploadData.fileUrl; // 업로드된 이미지 URL
-            } catch (error) {
-                console.error('Image Upload Error:', error);
-                showCustomModal("이미지 업로드 중 오류가 발생했습니다.");
-                return;
-            }
-        }
-
         const payload = {
             email: email,
             password: password,
             nickname: nickname,
-            profileImage: profileImageUrl
+            profileImage: null
         };
 
         try {
@@ -317,7 +287,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
 
             if (response.status === 201) {
-                showCustomModal("회원가입이 완료되었습니다.\n로그인 화면으로 이동합니다.", () => {
+                showCustomModal("회원가입이 완료되었습니다.\n프로필 이미지는 로그인 후 프로필 수정에서 설정할 수 있습니다.\n로그인 화면으로 이동합니다.", () => {
                     window.location.href = 'login.html';
                 });
             } else {
@@ -331,6 +301,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // 초기화
-    showHelper(profileError, "* 프로필 사진을 추가해주세요.");
+    showHelper(profileError, "* 프로필 사진은 가입 후 프로필 수정에서 설정할 수 있습니다.");
     checkFormValidity();
 });
