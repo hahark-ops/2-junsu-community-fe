@@ -26,6 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 상태 변수
     let currentUser = null;
+    const PROFILE_IMAGE_MAX_BYTES = 10 * 1024 * 1024;
 
     // ==========================================
     // 2. 헬퍼 함수
@@ -156,6 +157,12 @@ document.addEventListener('DOMContentLoaded', () => {
     imageInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (file) {
+            if (file.size > PROFILE_IMAGE_MAX_BYTES) {
+                imageInput.value = '';
+                showHelper('* 프로필 이미지는 10MB 이하 파일만 업로드할 수 있습니다.');
+                return;
+            }
+
             // 프리뷰 업데이트
             const reader = new FileReader();
             reader.onload = (e) => {
@@ -192,6 +199,11 @@ document.addEventListener('DOMContentLoaded', () => {
         let newProfileImageUrl = null;
         if (imageInput.files[0]) {
             try {
+                if (imageInput.files[0].size > PROFILE_IMAGE_MAX_BYTES) {
+                    showHelper('* 프로필 이미지는 10MB 이하 파일만 업로드할 수 있습니다.');
+                    return;
+                }
+
                 const formData = new FormData();
                 formData.append('file', imageInput.files[0]);
                 formData.append('type', 'profile');
@@ -204,7 +216,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 if (!uploadResponse.ok) {
-                    const errData = await uploadResponse.json();
+                    let errData = {};
+                    try {
+                        errData = await uploadResponse.json();
+                    } catch (_) {
+                        errData = {};
+                    }
+
+                    if (uploadResponse.status === 413) {
+                        showHelper('* 프로필 이미지는 10MB 이하 파일만 업로드할 수 있습니다.');
+                        return;
+                    }
+
                     showHelper(errData.message || "이미지 업로드 실패");
                     return;
                 }
@@ -290,6 +313,11 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (response.ok) {
+                localStorage.removeItem('profileImage');
+                localStorage.removeItem('nickname');
+                localStorage.removeItem('email');
+                localStorage.removeItem('userId');
+                localStorage.removeItem('user');
                 showCustomModal('회원 탈퇴가 완료되었습니다.', () => {
                     window.location.href = 'login.html';
                 });

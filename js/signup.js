@@ -27,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let isPasswordValid = false;
     let isPasswordConfirmValid = false;
     let isNicknameValid = false;
+    const PROFILE_IMAGE_MAX_BYTES = 10 * 1024 * 1024;
 
 
     // 헬퍼 함수
@@ -41,13 +42,114 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function checkFormValidity() {
-        // 프로필 이미지는 버튼 활성화에 영향을 주지 않지만, 안내 문구는 표시함
         if (isEmailValid && isPasswordValid && isPasswordConfirmValid && isNicknameValid) {
             signupBtn.disabled = false;
             signupBtn.classList.add('active');
         } else {
             signupBtn.disabled = true;
             signupBtn.classList.remove('active');
+        }
+    }
+
+    async function parseApiResponse(response) {
+        const contentType = response.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+            return await response.json();
+        }
+        const text = await response.text();
+        return { message: text || `요청 처리에 실패했습니다. (HTTP ${response.status})` };
+    }
+
+    function saveAuthState(userData, token = null) {
+        if (!userData) return;
+
+        localStorage.setItem('user', JSON.stringify(userData));
+        if (userData.userId) localStorage.setItem('userId', userData.userId);
+        if (userData.nickname) localStorage.setItem('nickname', userData.nickname);
+        if (userData.email) localStorage.setItem('email', userData.email);
+        if (userData.profileImage) {
+            localStorage.setItem('profileImage', userData.profileImage);
+        } else {
+            localStorage.removeItem('profileImage');
+        }
+
+        if (token) {
+            localStorage.setItem('token', token);
+            localStorage.setItem('accessToken', token);
+        }
+    }
+
+    async function loginAfterSignup(email, password) {
+        const response = await fetch(`${API_BASE_URL}/v1/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ email, password })
+        });
+
+        const data = await parseApiResponse(response);
+        if (!response.ok) {
+            throw new Error(data.message || '자동 로그인에 실패했습니다.');
+        }
+
+        return data;
+    }
+
+    async function fetchMe() {
+        const response = await fetch(`${API_BASE_URL}/v1/auth/me`, {
+            credentials: 'include'
+        });
+
+        const data = await parseApiResponse(response);
+        if (!response.ok || !data?.data?.userId) {
+            throw new Error(data.message || '사용자 정보 조회에 실패했습니다.');
+        }
+
+        return data.data;
+    }
+
+    async function uploadProfileImage(file) {
+        if (file.size > PROFILE_IMAGE_MAX_BYTES) {
+            throw new Error('프로필 이미지는 10MB 이하 파일만 업로드할 수 있습니다.');
+        }
+
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('type', 'profile');
+
+        const response = await fetch(`${API_BASE_URL}/v1/files/upload`, {
+            method: 'POST',
+            credentials: 'include',
+            body: formData
+        });
+
+        const data = await parseApiResponse(response);
+        if (!response.ok) {
+            if (response.status === 413) {
+                throw new Error('프로필 이미지는 10MB 이하 파일만 업로드할 수 있습니다.');
+            }
+            throw new Error(data.message || '프로필 이미지 업로드에 실패했습니다.');
+        }
+
+        const fileUrl = data.fileUrl || data.url;
+        if (!fileUrl) {
+            throw new Error('업로드 응답에 fileUrl이 없습니다.');
+        }
+
+        return fileUrl;
+    }
+
+    async function updateProfileImage(userId, fileUrl) {
+        const response = await fetch(`${API_BASE_URL}/v1/users/${userId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ profileImage: fileUrl })
+        });
+
+        const data = await parseApiResponse(response);
+        if (!response.ok) {
+            throw new Error(data.message || '프로필 이미지 저장에 실패했습니다.');
         }
     }
 
@@ -61,20 +163,27 @@ document.addEventListener('DOMContentLoaded', () => {
     profileImageInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (file) {
-            // 1. 미리보기 표시
+            if (file.size > PROFILE_IMAGE_MAX_BYTES) {
+                profileImageInput.value = '';
+                profileImgElement.src = '';
+                profilePreview.classList.remove('has-image');
+                showHelper(profileError, '* 프로필 이미지는 10MB 이하 파일만 선택할 수 있습니다.');
+                checkFormValidity();
+                return;
+            }
+
             const reader = new FileReader();
-            reader.onload = (e) => {
-                profileImgElement.src = e.target.result;
+            reader.onload = (evt) => {
+                profileImgElement.src = evt.target.result;
                 profilePreview.classList.add('has-image');
                 hideHelper(profileError);
                 checkFormValidity();
             };
             reader.readAsDataURL(file);
         } else {
-            // 취소하거나 파일이 없는 경우
             profileImgElement.src = '';
             profilePreview.classList.remove('has-image');
-            showHelper(profileError, "* 프로필 사진은 가입 후 프로필 수정에서 설정할 수 있습니다.");
+            showHelper(profileError, '* 프로필 사진은 선택사항입니다. 선택하면 가입 직후 자동 반영됩니다.');
             checkFormValidity();
         }
     });
@@ -86,30 +195,28 @@ document.addEventListener('DOMContentLoaded', () => {
     emailInput.addEventListener('focusout', async () => {
         const value = emailInput.value.trim();
         if (value === '') {
-            showHelper(emailHelper, "* 이메일을 입력해주세요.");
+            showHelper(emailHelper, '* 이메일을 입력해주세요.');
             isEmailValid = false;
         } else if (!emailPattern.test(value)) {
-            showHelper(emailHelper, "* 올바른 이메일 주소 형식을 입력해주세요. (예: example@example.com)");
+            showHelper(emailHelper, '* 올바른 이메일 주소 형식을 입력해주세요. (예: example@example.com)');
             isEmailValid = false;
         } else {
-            // API 중복 체크
             try {
                 const response = await fetch(`${API_BASE_URL}/v1/auth/emails/availability?email=${encodeURIComponent(value)}`);
-                const data = await response.json();
+                const data = await parseApiResponse(response);
 
                 if (response.ok) {
                     hideHelper(emailHelper);
                     isEmailValid = true;
                 } else if (response.status === 409) {
-                    showHelper(emailHelper, "* 이미 사용 중인 이메일입니다.");
+                    showHelper(emailHelper, '* 이미 사용 중인 이메일입니다.');
                     isEmailValid = false;
                 } else {
-                    showHelper(emailHelper, data.message || "* 이메일 확인 중 오류가 발생했습니다.");
+                    showHelper(emailHelper, data.message || '* 이메일 확인 중 오류가 발생했습니다.');
                     isEmailValid = false;
                 }
             } catch (error) {
                 console.error('Email check error:', error);
-                // 네트워크 오류 시 일단 통과 (회원가입 시 다시 검증됨)
                 hideHelper(emailHelper);
                 isEmailValid = true;
             }
@@ -117,7 +224,6 @@ document.addEventListener('DOMContentLoaded', () => {
         checkFormValidity();
     });
 
-    // 입력 시 에러 메시지 즉시 제거 및 버튼 상태 업데이트
     emailInput.addEventListener('input', () => {
         const value = emailInput.value.trim();
         if (emailPattern.test(value)) {
@@ -131,16 +237,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // 3. 비밀번호
-    // 규칙: 8-20자, 대문자+소문자+숫자+특수문자 포함
     const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9])\S{8,20}$/;
 
     passwordInput.addEventListener('focusout', () => {
         const value = passwordInput.value;
         if (value === '') {
-            showHelper(passwordHelper, "* 비밀번호를 입력해주세요.");
+            showHelper(passwordHelper, '* 비밀번호를 입력해주세요.');
             isPasswordValid = false;
         } else if (!passwordPattern.test(value)) {
-            showHelper(passwordHelper, "* 비밀번호는 8자 이상, 20자 이하이며, 대문자, 소문자, 숫자, 특수문자를 각각 최소 1개 포함해야 합니다.");
+            showHelper(passwordHelper, '* 비밀번호는 8자 이상, 20자 이하이며, 대문자, 소문자, 숫자, 특수문자를 각각 최소 1개 포함해야 합니다.');
             isPasswordValid = false;
         } else {
             hideHelper(passwordHelper);
@@ -148,7 +253,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         checkFormValidity();
 
-        // 비밀번호 확인 필드도 같이 체크
         if (passwordConfirmInput.value !== '') {
             triggerPasswordConfirmCheck();
         }
@@ -172,10 +276,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const confirm = passwordConfirmInput.value;
 
         if (confirm === '') {
-            showHelper(passwordConfirmHelper, "* 비밀번호를 한번 더 입력해주세요.");
+            showHelper(passwordConfirmHelper, '* 비밀번호를 한번 더 입력해주세요.');
             isPasswordConfirmValid = false;
         } else if (pwd !== confirm) {
-            showHelper(passwordConfirmHelper, "* 비밀번호가 다릅니다.");
+            showHelper(passwordConfirmHelper, '* 비밀번호가 다릅니다.');
             isPasswordConfirmValid = false;
         } else {
             hideHelper(passwordConfirmHelper);
@@ -200,37 +304,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // 5. 닉네임
-    // 규칙: 공백 불가, 최대 10자, 특수문자 불가
     const nicknamePattern = /^[a-zA-Z0-9가-힣]{1,10}$/;
 
     nicknameInput.addEventListener('focusout', async () => {
         const value = nicknameInput.value;
         if (value === '') {
-            showHelper(nicknameHelper, "* 닉네임을 입력해주세요.");
+            showHelper(nicknameHelper, '* 닉네임을 입력해주세요.');
             isNicknameValid = false;
         } else if (/\s/.test(value)) {
-            showHelper(nicknameHelper, "* 띄어쓰기를 없애주세요.");
+            showHelper(nicknameHelper, '* 띄어쓰기를 없애주세요.');
             isNicknameValid = false;
         } else if (value.length > 10) {
-            showHelper(nicknameHelper, "* 닉네임은 최대 10자까지 작성 가능합니다.");
+            showHelper(nicknameHelper, '* 닉네임은 최대 10자까지 작성 가능합니다.');
             isNicknameValid = false;
         } else if (!nicknamePattern.test(value)) {
-            showHelper(nicknameHelper, "* 닉네임 형식이 올바르지 않습니다. (공백/특수문자 불가)");
+            showHelper(nicknameHelper, '* 닉네임 형식이 올바르지 않습니다. (공백/특수문자 불가)');
             isNicknameValid = false;
         } else {
-            // API 중복 체크
             try {
                 const response = await fetch(`${API_BASE_URL}/v1/auth/nicknames/availability?nickname=${encodeURIComponent(value)}`);
-                const data = await response.json();
+                const data = await parseApiResponse(response);
 
                 if (response.ok) {
                     hideHelper(nicknameHelper);
                     isNicknameValid = true;
                 } else if (response.status === 409) {
-                    showHelper(nicknameHelper, "* 이미 사용 중인 닉네임입니다.");
+                    showHelper(nicknameHelper, '* 이미 사용 중인 닉네임입니다.');
                     isNicknameValid = false;
                 } else {
-                    showHelper(nicknameHelper, data.message || "* 닉네임 확인 중 오류가 발생했습니다.");
+                    showHelper(nicknameHelper, data.message || '* 닉네임 확인 중 오류가 발생했습니다.');
                     isNicknameValid = false;
                 }
             } catch (error) {
@@ -245,7 +347,7 @@ document.addEventListener('DOMContentLoaded', () => {
     nicknameInput.addEventListener('input', () => {
         const value = nicknameInput.value;
         if (value.length > 10) {
-            showHelper(nicknameHelper, "* 닉네임은 최대 10자까지 작성 가능합니다.");
+            showHelper(nicknameHelper, '* 닉네임은 최대 10자까지 작성 가능합니다.');
             isNicknameValid = false;
         } else if (nicknamePattern.test(value)) {
             hideHelper(nicknameHelper);
@@ -258,23 +360,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // 6. 회원가입 제출
-
     signupBtn.addEventListener('click', async () => {
         if (signupBtn.disabled) return;
 
-        const email = emailInput.value;
+        const email = emailInput.value.trim();
         const password = passwordInput.value;
-        const nickname = nicknameInput.value;
+        const nickname = nicknameInput.value.trim();
+        const selectedProfileFile = profileImageInput.files[0] || null;
 
         const payload = {
-            email: email,
-            password: password,
-            nickname: nickname,
+            email,
+            password,
+            nickname,
             profileImage: null
         };
 
         try {
-
+            signupBtn.disabled = true;
+            signupBtn.classList.remove('active');
 
             const response = await fetch(`${API_BASE_URL}/v1/auth/signup`, {
                 method: 'POST',
@@ -284,23 +387,65 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify(payload)
             });
 
-            const data = await response.json();
+            const data = await parseApiResponse(response);
 
-            if (response.status === 201) {
-                showCustomModal("회원가입이 완료되었습니다.\n프로필 이미지는 로그인 후 프로필 수정에서 설정할 수 있습니다.\n로그인 화면으로 이동합니다.", () => {
+            if (response.status !== 201) {
+                showCustomModal(data.message || '회원가입에 실패했습니다.');
+                signupBtn.disabled = false;
+                signupBtn.classList.add('active');
+                return;
+            }
+
+            if (!selectedProfileFile) {
+                localStorage.removeItem('profileImage');
+                showCustomModal('회원가입이 완료되었습니다.\n로그인 화면으로 이동합니다.', () => {
                     window.location.href = 'login.html';
                 });
-            } else {
-                showCustomModal(data.message || "회원가입에 실패했습니다.");
+                return;
+            }
+
+            try {
+                const loginResult = await loginAfterSignup(email, password);
+                const me = await fetchMe();
+                const fileUrl = await uploadProfileImage(selectedProfileFile);
+                await updateProfileImage(me.userId, fileUrl);
+
+                const loginUserData = (loginResult.data && loginResult.data.user)
+                    ? loginResult.data.user
+                    : (loginResult.data || {});
+
+                const mergedUser = {
+                    ...loginUserData,
+                    userId: me.userId,
+                    email,
+                    nickname,
+                    profileImage: fileUrl
+                };
+
+                const token = (loginResult.data && loginResult.data.token)
+                    ? loginResult.data.token
+                    : null;
+                saveAuthState(mergedUser, token);
+
+                showCustomModal('회원가입이 완료되었습니다.\n프로필 이미지가 즉시 적용되었습니다.', () => {
+                    window.location.href = 'index.html';
+                });
+            } catch (autoApplyError) {
+                console.error('Signup image auto-apply error:', autoApplyError);
+                showCustomModal('회원가입은 완료되었지만 프로필 이미지 자동 반영에 실패했습니다.\n로그인 후 프로필 수정에서 다시 시도해주세요.', () => {
+                    window.location.href = 'login.html';
+                });
             }
 
         } catch (error) {
             console.error('Signup error:', error);
-            showCustomModal("서버 통신 중 오류가 발생했습니다.");
+            showCustomModal('서버 통신 중 오류가 발생했습니다.');
+            signupBtn.disabled = false;
+            signupBtn.classList.add('active');
         }
     });
 
     // 초기화
-    showHelper(profileError, "* 프로필 사진은 가입 후 프로필 수정에서 설정할 수 있습니다.");
+    showHelper(profileError, '* 프로필 사진은 선택사항입니다. 선택하면 가입 직후 자동 반영됩니다.');
     checkFormValidity();
 });
