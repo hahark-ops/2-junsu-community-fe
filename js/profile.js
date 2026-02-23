@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 상태 변수
     let currentUser = null;
-    const PROFILE_IMAGE_MAX_BYTES = 10 * 1024 * 1024;
+    const PROFILE_IMAGE_MAX_BYTES = 15 * 1024 * 1024;
 
     // ==========================================
     // 2. 헬퍼 함수
@@ -159,7 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (file) {
             if (file.size > PROFILE_IMAGE_MAX_BYTES) {
                 imageInput.value = '';
-                showHelper('* 프로필 이미지는 10MB 이하 파일만 업로드할 수 있습니다.');
+                showHelper('* 프로필 이미지는 15MB 이하 파일만 업로드할 수 있습니다.');
                 return;
             }
 
@@ -200,43 +200,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (imageInput.files[0]) {
             try {
                 if (imageInput.files[0].size > PROFILE_IMAGE_MAX_BYTES) {
-                    showHelper('* 프로필 이미지는 10MB 이하 파일만 업로드할 수 있습니다.');
+                    showHelper('* 프로필 이미지는 15MB 이하 파일만 업로드할 수 있습니다.');
                     return;
                 }
-
-                const formData = new FormData();
-                formData.append('file', imageInput.files[0]);
-                formData.append('type', 'profile');
-
-                const uploadResponse = await fetch(`${API_BASE_URL}/v1/files/upload`, {
-                    method: 'POST',
-                    headers: {},
-                    credentials: 'include',
-                    body: formData
-                });
-
-                if (!uploadResponse.ok) {
-                    let errData = {};
-                    try {
-                        errData = await uploadResponse.json();
-                    } catch (_) {
-                        errData = {};
-                    }
-
-                    if (uploadResponse.status === 413) {
-                        showHelper('* 프로필 이미지는 10MB 이하 파일만 업로드할 수 있습니다.');
-                        return;
-                    }
-
-                    showHelper(errData.message || "이미지 업로드 실패");
-                    return;
-                }
-
-                const uploadData = await uploadResponse.json();
-                newProfileImageUrl = uploadData.fileUrl;
+                newProfileImageUrl = await uploadFileViaPresigned(imageInput.files[0], 'profile');
             } catch (error) {
                 console.error('Image upload error:', error);
-                showHelper("이미지 업로드 중 오류가 발생했습니다.");
+                showHelper(error.message || "이미지 업로드 중 오류가 발생했습니다.");
                 return;
             }
         }

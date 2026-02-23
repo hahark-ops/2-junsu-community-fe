@@ -10,6 +10,68 @@ const API_BASE_URL = (window.RUNTIME_CONFIG && window.RUNTIME_CONFIG.API_BASE_UR
     ? String(window.RUNTIME_CONFIG.API_BASE_URL).replace(/\/+$/, '')
     : '');
 
+const UPLOAD_API_BASE_URL = (window.RUNTIME_CONFIG && window.RUNTIME_CONFIG.UPLOAD_API_BASE_URL
+    ? String(window.RUNTIME_CONFIG.UPLOAD_API_BASE_URL).replace(/\/+$/, '')
+    : API_BASE_URL);
+
+async function parseApiResponseSafe(response) {
+    const contentType = response.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+        return await response.json();
+    }
+    const text = await response.text();
+    return { message: text || `요청 처리에 실패했습니다. (HTTP ${response.status})` };
+}
+
+async function uploadFileViaPresigned(file, type = 'post') {
+    if (!file) {
+        throw new Error('업로드할 파일이 없습니다.');
+    }
+    if (!UPLOAD_API_BASE_URL) {
+        throw new Error('업로드 API 주소가 설정되지 않았습니다.');
+    }
+
+    const uploadType = type === 'profile' ? 'profile' : 'post';
+    const requestBody = {
+        type: uploadType,
+        filename: file.name || `${uploadType}.png`,
+        contentType: file.type || 'application/octet-stream'
+    };
+
+    const presignResponse = await fetch(`${UPLOAD_API_BASE_URL}/v1/files/upload-url`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody)
+    });
+
+    const presignData = await parseApiResponseSafe(presignResponse);
+    if (!presignResponse.ok) {
+        throw new Error(presignData.message || '업로드 URL 발급에 실패했습니다.');
+    }
+
+    const uploadUrl = presignData?.data?.uploadUrl || presignData?.uploadUrl;
+    const fileUrl = presignData?.data?.fileUrl || presignData?.data?.filePath || presignData?.fileUrl || presignData?.filePath;
+    if (!uploadUrl || !fileUrl) {
+        throw new Error('업로드 URL 응답 형식이 올바르지 않습니다.');
+    }
+
+    const uploadResponse = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': file.type || 'application/octet-stream' },
+        body: file
+    });
+
+    if (!uploadResponse.ok) {
+        const uploadErrorText = await uploadResponse.text();
+        throw new Error(uploadErrorText || `S3 업로드에 실패했습니다. (HTTP ${uploadResponse.status})`);
+    }
+
+    return fileUrl;
+}
+
+window.parseApiResponseSafe = parseApiResponseSafe;
+window.uploadFileViaPresigned = uploadFileViaPresigned;
+
 // ===========================================
 // 2. 프로필 이미지 즉시 로드 (깜빡임 방지)
 // ===========================================

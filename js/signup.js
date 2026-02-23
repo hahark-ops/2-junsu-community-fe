@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let isPasswordValid = false;
     let isPasswordConfirmValid = false;
     let isNicknameValid = false;
-    const PROFILE_IMAGE_MAX_BYTES = 10 * 1024 * 1024;
+    const PROFILE_IMAGE_MAX_BYTES = 15 * 1024 * 1024;
 
 
     // 헬퍼 함수
@@ -110,33 +110,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function uploadProfileImage(file) {
         if (file.size > PROFILE_IMAGE_MAX_BYTES) {
-            throw new Error('프로필 이미지는 10MB 이하 파일만 업로드할 수 있습니다.');
+            throw new Error('프로필 이미지는 15MB 이하 파일만 업로드할 수 있습니다.');
         }
-
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('type', 'profile');
-
-        const response = await fetch(`${API_BASE_URL}/v1/files/upload`, {
-            method: 'POST',
-            credentials: 'include',
-            body: formData
-        });
-
-        const data = await parseApiResponse(response);
-        if (!response.ok) {
-            if (response.status === 413) {
-                throw new Error('프로필 이미지는 10MB 이하 파일만 업로드할 수 있습니다.');
-            }
-            throw new Error(data.message || '프로필 이미지 업로드에 실패했습니다.');
-        }
-
-        const fileUrl = data.fileUrl || data.url;
-        if (!fileUrl) {
-            throw new Error('업로드 응답에 fileUrl이 없습니다.');
-        }
-
-        return fileUrl;
+        return await uploadFileViaPresigned(file, 'profile');
     }
 
     async function updateProfileImage(userId, fileUrl) {
@@ -167,7 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 profileImageInput.value = '';
                 profileImgElement.src = '';
                 profilePreview.classList.remove('has-image');
-                showHelper(profileError, '* 프로필 이미지는 10MB 이하 파일만 선택할 수 있습니다.');
+                showHelper(profileError, '* 프로필 이미지는 15MB 이하 파일만 선택할 수 있습니다.');
                 checkFormValidity();
                 return;
             }

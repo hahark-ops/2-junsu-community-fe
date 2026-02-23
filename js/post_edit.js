@@ -88,6 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const fileSelectBtn = document.getElementById('fileSelectBtn');
     const fileNameSpan = document.getElementById('fileName');
     const submitBtn = document.getElementById('submitBtn');
+    const POST_IMAGE_MAX_BYTES = 20 * 1024 * 1024;
 
     // 상태 변수
     let originalPost = null;
@@ -180,6 +181,11 @@ document.addEventListener('DOMContentLoaded', () => {
     imageInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (file) {
+            if (file.size > POST_IMAGE_MAX_BYTES) {
+                imageInput.value = '';
+                showHelper('* 게시글 이미지는 20MB 이하 파일만 업로드할 수 있습니다.');
+                return;
+            }
             fileNameSpan.textContent = file.name;
             fileNameSpan.classList.add('selected');
             currentFileUrl = null; // 새 파일 선택 시 기존 URL 초기화
@@ -205,28 +211,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (imageInput.files[0]) {
             try {
-                const formData = new FormData();
-                formData.append('file', imageInput.files[0]);
-                formData.append('type', 'post');
-
-                const uploadResponse = await fetch(`${API_BASE_URL}/v1/files/upload`, {
-                    method: 'POST',
-                    headers: {},
-                    credentials: 'include',
-                    body: formData
-                });
-
-                if (!uploadResponse.ok) {
-                    const errData = await uploadResponse.json();
-                    showHelper(errData.message || "이미지 업로드 실패");
+                if (imageInput.files[0].size > POST_IMAGE_MAX_BYTES) {
+                    showHelper('* 게시글 이미지는 20MB 이하 파일만 업로드할 수 있습니다.');
                     return;
                 }
-
-                const uploadData = await uploadResponse.json();
-                fileUrl = uploadData.fileUrl;
+                fileUrl = await uploadFileViaPresigned(imageInput.files[0], 'post');
             } catch (error) {
                 console.error('Image upload error:', error);
-                showHelper("이미지 업로드 중 오류가 발생했습니다.");
+                showHelper(error.message || "이미지 업로드 중 오류가 발생했습니다.");
                 return;
             }
         }

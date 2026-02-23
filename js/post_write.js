@@ -77,6 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const fileSelectBtn = document.getElementById('fileSelectBtn');
     const fileNameSpan = document.getElementById('fileName');
     const submitBtn = document.getElementById('submitBtn');
+    const POST_IMAGE_MAX_BYTES = 20 * 1024 * 1024;
 
 
     // ==========================================
@@ -130,6 +131,13 @@ document.addEventListener('DOMContentLoaded', () => {
     imageInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (file) {
+            if (file.size > POST_IMAGE_MAX_BYTES) {
+                imageInput.value = '';
+                fileNameSpan.textContent = '파일을 선택해주세요.';
+                fileNameSpan.classList.remove('selected');
+                showHelper('* 게시글 이미지는 20MB 이하 파일만 업로드할 수 있습니다.');
+                return;
+            }
             fileNameSpan.textContent = file.name;
             fileNameSpan.classList.add('selected');
         } else {
@@ -157,32 +165,15 @@ document.addEventListener('DOMContentLoaded', () => {
         let postImage = null;
         if (imageInput.files[0]) {
             try {
-                const formData = new FormData();
-                formData.append('file', imageInput.files[0]);
-                formData.append('type', 'post');
-
-                // 주의: 파일 업로드는 credentials: 'include'가 필요할 수 있음 (로그인 체크가 있다면)
-                // 하지만 headers에 'Content-Type'을 설정하면 안됨 (브라우저가 자동으로 Boundary 설정)
-                const uploadResponse = await fetch(`${API_BASE_URL}/v1/files/upload`, {
-                    method: 'POST',
-                    headers: {}, // Content-Type 자동 설정을 위해 빈 객체 또는 생략
-                    credentials: 'include',
-                    body: formData
-                });
-
-                if (!uploadResponse.ok) {
-                    const errData = await uploadResponse.json();
-                    showHelper(errData.message || "이미지 업로드 실패");
+                if (imageInput.files[0].size > POST_IMAGE_MAX_BYTES) {
+                    showHelper('* 게시글 이미지는 20MB 이하 파일만 업로드할 수 있습니다.');
                     return;
                 }
 
-                const uploadData = await uploadResponse.json();
-                postImage = uploadData.fileUrl;
-
-
+                postImage = await uploadFileViaPresigned(imageInput.files[0], 'post');
             } catch (error) {
                 console.error('Image upload error:', error);
-                showHelper("이미지 업로드 중 오류가 발생했습니다.");
+                showHelper(error.message || "이미지 업로드 중 오류가 발생했습니다.");
                 return;
             }
         }
