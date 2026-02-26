@@ -410,7 +410,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         commentList.innerHTML = '';
 
-        comments.forEach((comment, index) => {
+        comments.forEach((comment) => {
             const commentEl = document.createElement('div');
             commentEl.className = 'comment-item';
             commentEl.dataset.id = comment.commentId;
@@ -451,28 +451,57 @@ document.addEventListener('DOMContentLoaded', () => {
             // 표시할 작성자 이름 가져오기 (다양한 필드 시도)
             const authorDisplayName = comment.authorNickname || comment.nickname || comment.writer || '익명';
 
-            commentEl.innerHTML = `
-                <div class="comment-header">
-                    <div class="comment-author-info">
-                        <div class="comment-avatar" ${comment.authorProfileImage ? `style="background-image: url(${comment.authorProfileImage})"` : ''}></div>
-                        <span class="comment-author-name">${authorDisplayName}</span>
-                        <span class="comment-date">${formatDate(comment.createdAt)}</span>
-                    </div>
-                    ${isOwner ? `
-                        <div class="comment-actions">
-                            <button class="comment-action-btn edit-comment-btn">수정</button>
-                            <button class="comment-action-btn delete-comment-btn">삭제</button>
-                        </div>
-                    ` : ''}
-                </div>
-                <div class="comment-content">${comment.content}</div>
-            `;
+            const headerEl = document.createElement('div');
+            headerEl.className = 'comment-header';
+
+            const authorInfoEl = document.createElement('div');
+            authorInfoEl.className = 'comment-author-info';
+
+            const avatarEl = document.createElement('div');
+            avatarEl.className = 'comment-avatar';
+            if (comment.authorProfileImage) {
+                avatarEl.style.backgroundImage = `url("${comment.authorProfileImage}")`;
+            }
+
+            const authorNameEl = document.createElement('span');
+            authorNameEl.className = 'comment-author-name';
+            authorNameEl.textContent = authorDisplayName;
+
+            const dateEl = document.createElement('span');
+            dateEl.className = 'comment-date';
+            dateEl.textContent = formatDate(comment.createdAt);
+
+            authorInfoEl.append(avatarEl, authorNameEl, dateEl);
+            headerEl.appendChild(authorInfoEl);
+
+            let editBtn = null;
+            let deleteBtn = null;
+            if (isOwner) {
+                const actionsEl = document.createElement('div');
+                actionsEl.className = 'comment-actions';
+
+                editBtn = document.createElement('button');
+                editBtn.className = 'comment-action-btn edit-comment-btn';
+                editBtn.type = 'button';
+                editBtn.textContent = '수정';
+
+                deleteBtn = document.createElement('button');
+                deleteBtn.className = 'comment-action-btn delete-comment-btn';
+                deleteBtn.type = 'button';
+                deleteBtn.textContent = '삭제';
+
+                actionsEl.append(editBtn, deleteBtn);
+                headerEl.appendChild(actionsEl);
+            }
+
+            const contentEl = document.createElement('div');
+            contentEl.className = 'comment-content';
+            contentEl.textContent = comment.content || '';
+
+            commentEl.append(headerEl, contentEl);
 
             // 이 댓글에 이벤트 바인딩
             if (isOwner) {
-                const editBtn = commentEl.querySelector('.edit-comment-btn');
-                const deleteBtn = commentEl.querySelector('.delete-comment-btn');
-
                 editBtn.addEventListener('click', () => {
                     editingCommentId = comment.commentId;
                     commentInput.value = comment.content;

@@ -51,7 +51,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (posts.length === 0) {
                     isLastPage = true;
                     if (requestOffset === 0) {
-                        postContainer.innerHTML = '<div style="text-align:center; padding: 20px;">게시글이 없습니다. 첫 글을 작성해보세요!</div>';
+                        const emptyState = document.createElement('div');
+                        emptyState.style.textAlign = 'center';
+                        emptyState.style.padding = '20px';
+                        emptyState.textContent = '게시글이 없습니다. 첫 글을 작성해보세요!';
+                        postContainer.appendChild(emptyState);
                     }
                     return;
                 }
@@ -170,26 +174,50 @@ document.addEventListener('DOMContentLoaded', () => {
         const commentsStr = formatNumber(post.commentCount || 0);
         const viewsStr = formatNumber(post.viewCount || 0);
         const dateStr = formatDate(post.createdAt);
-        const authorProfileClass = post.authorProfileImage ? '' : 'default-profile';
+        const titleEl = document.createElement('div');
+        titleEl.className = 'post-card-title';
+        titleEl.textContent = post.title || '';
 
-        card.innerHTML = `
-            <div class="post-card-title">${post.title}</div>
-            <div class="post-card-meta">
-                <div class="post-stats">
-                    <span>좋아요 ${likesStr}</span>
-                    <span>댓글 ${commentsStr}</span>
-                    <span>조회수 ${viewsStr}</span>
-                </div>
-                <div class="post-date">${dateStr}</div>
-            </div>
-            <div class="post-divider"></div>
-            <div class="post-author-row">
-                <div class="author-profile-img ${authorProfileClass}" 
-                     style="${post.authorProfileImage ? `background-image: url(${post.authorProfileImage}); background-size: cover;` : ''}">
-                </div>
-                <span class="author-name">${post.writer}</span>
-            </div>
-        `;
+        const metaEl = document.createElement('div');
+        metaEl.className = 'post-card-meta';
+
+        const statsEl = document.createElement('div');
+        statsEl.className = 'post-stats';
+
+        const likesEl = document.createElement('span');
+        likesEl.textContent = `좋아요 ${likesStr}`;
+        const commentsEl = document.createElement('span');
+        commentsEl.textContent = `댓글 ${commentsStr}`;
+        const viewsEl = document.createElement('span');
+        viewsEl.textContent = `조회수 ${viewsStr}`;
+        statsEl.append(likesEl, commentsEl, viewsEl);
+
+        const dateEl = document.createElement('div');
+        dateEl.className = 'post-date';
+        dateEl.textContent = dateStr;
+        metaEl.append(statsEl, dateEl);
+
+        const dividerEl = document.createElement('div');
+        dividerEl.className = 'post-divider';
+
+        const authorRowEl = document.createElement('div');
+        authorRowEl.className = 'post-author-row';
+
+        const authorImageEl = document.createElement('div');
+        authorImageEl.className = 'author-profile-img';
+        if (post.authorProfileImage) {
+            authorImageEl.style.backgroundImage = `url("${post.authorProfileImage}")`;
+            authorImageEl.style.backgroundSize = 'cover';
+        } else {
+            authorImageEl.classList.add('default-profile');
+        }
+
+        const authorNameEl = document.createElement('span');
+        authorNameEl.className = 'author-name';
+        authorNameEl.textContent = post.writer || '';
+
+        authorRowEl.append(authorImageEl, authorNameEl);
+        card.append(titleEl, metaEl, dividerEl, authorRowEl);
         return card;
     }
 
