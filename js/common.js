@@ -65,7 +65,8 @@ async function uploadFileViaPresigned(file, type = 'post') {
             const requestBody = {
                 type: uploadType,
                 filename: file.name || `${uploadType}.png`,
-                contentType: file.type || 'application/octet-stream'
+                contentType: file.type || 'application/octet-stream',
+                sizeBytes: Number(file.size || 0)
             };
 
             const presignResponse = await fetch(`${UPLOAD_API_BASE_URL}/v1/files/upload-url`, {
