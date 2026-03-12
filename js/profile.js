@@ -288,7 +288,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 localStorage.removeItem('email');
                 localStorage.removeItem('userId');
                 localStorage.removeItem('user');
-                showCustomModal('회원 탈퇴가 완료되었습니다.', () => {
+                showCustomModal('회원 탈퇴가 완료되었습니다. 계정과 관련 데이터가 영구 삭제되었습니다.', () => {
                     window.location.href = 'login.html';
                 });
             } else {
