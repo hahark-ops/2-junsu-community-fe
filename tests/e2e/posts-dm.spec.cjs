@@ -37,8 +37,14 @@ test('게시글, 댓글, 좋아요, DM, unread 흐름', async ({ browser }) => {
   await pageB.locator('#likeBtn').click();
   await expect(pageB.locator('#likeBtn')).toHaveClass(/liked/);
   await pageB.locator('#commentInput').fill(commentContent);
+  const commentResponsePromise = pageB.waitForResponse((response) =>
+    response.url().includes('/comments') && response.request().method() === 'POST'
+  );
   await pageB.locator('#commentSubmitBtn').click();
-  await expect(pageB.locator('#commentList')).toContainText(commentContent);
+  const commentResponse = await commentResponsePromise;
+  expect(commentResponse.ok()).toBeTruthy();
+  await pageB.reload();
+  await expect(pageB.locator('.comment-content')).toContainText(commentContent);
 
   await pageB.locator('.author-info').click();
   await pageB.getByRole('button', { name: '채팅하기' }).click();
