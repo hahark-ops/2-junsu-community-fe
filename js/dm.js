@@ -534,6 +534,41 @@ document.addEventListener('DOMContentLoaded', () => {
         messageListEl.appendChild(row);
     }
 
+    function queuePendingMessage(content) {
+        const clientMessageId = generateClientMessageId();
+        const pendingMessage = {
+            clientMessageId,
+            roomId: currentRoomId,
+            senderNickname: currentUser && currentUser.nickname ? currentUser.nickname : '나',
+            senderProfileImage: currentUser && currentUser.profileImage ? currentUser.profileImage : '',
+            content,
+            createdAt: new Date().toISOString(),
+            isMine: true,
+            readByOther: false,
+        };
+        pendingMessages.set(clientMessageId, pendingMessage);
+        appendPendingMessage(pendingMessage);
+        updateRoomSummary(currentRoomId, (room) => {
+            room.lastMessage = content;
+            room.lastMessageAt = pendingMessage.createdAt;
+            room.unreadCount = 0;
+        });
+        scrollToBottom();
+        return pendingMessage;
+    }
+
+    function flushPendingMessage(pendingMessage) {
+        if (!socket || socket.readyState !== WebSocket.OPEN) {
+            return false;
+        }
+        socket.send(JSON.stringify({
+            type: 'send_message',
+            content: pendingMessage.content,
+            clientMessageId: pendingMessage.clientMessageId,
+        }));
+        return true;
+    }
+
     function appendMessage(message) {
         const normalizedMessage = {
             ...message,
@@ -778,6 +813,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const apiUrl = API_BASE_URL ? new URL(API_BASE_URL, window.location.origin) : new URL(window.location.origin);
         const wsProtocol = apiUrl.protocol === 'https:' ? 'wss:' : 'ws:';
         const wsUrl = `${wsProtocol}//${apiUrl.host}/ws/dm/${roomIdAtConnect}`;
+        updateStatusMessage('실시간 연결 중...');
         const nextSocket = new WebSocket(wsUrl);
         socket = nextSocket;
 
@@ -857,32 +893,22 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const rawContent = inputEl.value.replace(/\r\n/g, '\n');
-        if (!rawContent.trim() || !socket || socket.readyState !== WebSocket.OPEN || !currentRoomId) {
+        if (!rawContent.trim() || !currentRoomId) {
             return;
         }
 
-        const content = rawContent;
-        const clientMessageId = generateClientMessageId();
-        const pendingMessage = {
-            clientMessageId,
-            roomId: currentRoomId,
-            senderNickname: currentUser && currentUser.nickname ? currentUser.nickname : '나',
-            senderProfileImage: currentUser && currentUser.profileImage ? currentUser.profileImage : '',
-            content,
-            createdAt: new Date().toISOString(),
-            isMine: true,
-            readByOther: false,
-        };
-        pendingMessages.set(clientMessageId, pendingMessage);
-        appendPendingMessage(pendingMessage);
-        updateRoomSummary(currentRoomId, (room) => {
-            room.lastMessage = content;
-            room.lastMessageAt = pendingMessage.createdAt;
-            room.unreadCount = 0;
-        });
-        scrollToBottom();
-        socket.send(JSON.stringify({ type: 'send_message', content, clientMessageId }));
+        const pendingMessage = queuePendingMessage(rawContent);
         inputEl.value = '';
+
+        if (socket && socket.readyState === WebSocket.OPEN) {
+            flushPendingMessage(pendingMessage);
+            return;
+        }
+
+        updateStatusMessage('실시간 연결 중... 메시지를 전송 대기 중입니다.');
+        if (!socket || socket.readyState === WebSocket.CLOSED || socket.readyState === WebSocket.CLOSING) {
+            connectSocket();
+        }
     }
 
     function handleComposerKeydown(event) {

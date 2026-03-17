@@ -75,8 +75,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 헤더 프로필 즉시 적용
         const cachedProfileImage = localStorage.getItem('profileImage') || (currentUser && currentUser.profileImage);
-        if (cachedProfileImage && profileIcon) {
-            profileIcon.style.backgroundImage = `url(${cachedProfileImage})`;
+        if (cachedProfileImage && window.applyProfileIconImage) {
+            window.applyProfileIconImage(cachedProfileImage);
         }
     }
 
@@ -161,8 +161,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (currentUser.profileImage) localStorage.setItem('profileImage', currentUser.profileImage);
 
                     // 헤더 프로필 아이콘 업데이트
-                    if (profileIcon && currentUser.profileImage) {
-                        profileIcon.style.backgroundImage = `url(${currentUser.profileImage})`;
+                    if (currentUser.profileImage && window.applyProfileIconImage) {
+                        window.applyProfileIconImage(currentUser.profileImage);
                     } else if (profileIcon) {
                         profileIcon.style.backgroundColor = '#7F6AEE';
                     }
@@ -198,7 +198,8 @@ document.addEventListener('DOMContentLoaded', () => {
     async function fetchComments() {
         try {
             const response = await fetch(`${API_BASE_URL}/v1/posts/${postId}/comments`, {
-                credentials: 'include'
+                credentials: 'include',
+                cache: 'no-store'
             });
 
             if (response.ok) {
@@ -206,10 +207,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = result.data || result;
                 const comments = Array.isArray(data) ? data : (data.comments || []);
                 renderComments(comments);
+                return comments;
             }
         } catch (error) {
             console.error('Failed to fetch comments:', error);
         }
+        return [];
     }
 
     // 현재 사용자가 이미 좋아요한 게시글인지 확인
@@ -322,17 +325,28 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (response.ok) {
+                const result = await response.json();
+                const commentPayload = result.data || null;
                 const isEditMode = Boolean(editingCommentId);
+                const pendingCommentId = editingCommentId;
+
                 commentInput.value = '';
                 commentSubmitBtn.textContent = '댓글 등록';
                 commentSubmitBtn.disabled = true;
                 commentSubmitBtn.classList.remove('active');
                 editingCommentId = null;
-                fetchComments();
 
-                // 댓글 수 업데이트
-                let count = parseInt(commentCountEl.textContent.replace(/[^0-9]/g, '')) || 0;
-                if (!isEditMode) { // 새 댓글인 경우
+                if (!isEditMode && commentPayload) {
+                    prependComment(commentPayload);
+                }
+                if (isEditMode && commentPayload) {
+                    replaceRenderedComment(pendingCommentId, commentPayload);
+                }
+
+                await fetchComments();
+
+                if (!isEditMode) {
+                    let count = parseInt(commentCountEl.textContent.replace(/[^0-9]/g, '')) || 0;
                     commentCountEl.textContent = formatCount(count + 1);
                 }
             } else {
@@ -351,7 +365,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (response.ok) {
-                fetchComments();
+                await fetchComments();
                 let count = parseInt(commentCountEl.textContent.replace(/[^0-9]/g, '')) || 0;
                 commentCountEl.textContent = formatCount(Math.max(0, count - 1));
             } else {
@@ -441,108 +455,118 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function buildCommentElement(comment) {
+        const commentEl = document.createElement('div');
+        commentEl.className = 'comment-item';
+        commentEl.dataset.id = comment.commentId;
+
+        const currentUserId = currentUser ? String(currentUser.userId) : null;
+        let commentAuthorId = null;
+        if (comment.authorId) {
+            commentAuthorId = String(comment.authorId);
+        } else if (comment.userId) {
+            commentAuthorId = String(comment.userId);
+        } else if (comment.author && comment.author.userId) {
+            commentAuthorId = String(comment.author.userId);
+        }
+
+        const isOwner = Boolean(currentUserId && commentAuthorId && currentUserId === commentAuthorId);
+        const authorDisplayName = comment.authorNickname || comment.nickname || comment.writer || '익명';
+
+        const headerEl = document.createElement('div');
+        headerEl.className = 'comment-header';
+
+        const authorInfoEl = document.createElement('div');
+        authorInfoEl.className = 'comment-author-info';
+
+        const avatarEl = document.createElement('div');
+        avatarEl.className = 'comment-avatar';
+        if (comment.authorProfileImage) {
+            avatarEl.style.backgroundImage = `url("${comment.authorProfileImage}")`;
+        }
+
+        const authorNameEl = document.createElement('span');
+        authorNameEl.className = 'comment-author-name';
+        authorNameEl.textContent = authorDisplayName;
+
+        const dateEl = document.createElement('span');
+        dateEl.className = 'comment-date';
+        dateEl.textContent = formatDate(comment.createdAt);
+
+        authorInfoEl.append(avatarEl, authorNameEl, dateEl);
+        headerEl.appendChild(authorInfoEl);
+
+        let editBtn = null;
+        let deleteBtn = null;
+        if (isOwner) {
+            const actionsEl = document.createElement('div');
+            actionsEl.className = 'comment-actions';
+
+            editBtn = document.createElement('button');
+            editBtn.className = 'comment-action-btn edit-comment-btn';
+            editBtn.type = 'button';
+            editBtn.textContent = '수정';
+
+            deleteBtn = document.createElement('button');
+            deleteBtn.className = 'comment-action-btn delete-comment-btn';
+            deleteBtn.type = 'button';
+            deleteBtn.textContent = '삭제';
+
+            actionsEl.append(editBtn, deleteBtn);
+            headerEl.appendChild(actionsEl);
+        }
+
+        const contentEl = document.createElement('div');
+        contentEl.className = 'comment-content';
+        contentEl.textContent = comment.content || '';
+
+        commentEl.append(headerEl, contentEl);
+
+        if (isOwner) {
+            editBtn.addEventListener('click', () => {
+                editingCommentId = comment.commentId;
+                commentInput.value = comment.content;
+                commentInput.focus();
+                commentSubmitBtn.textContent = '댓글 수정';
+                commentSubmitBtn.disabled = false;
+                commentSubmitBtn.classList.add('active');
+                commentInput.scrollIntoView({ behavior: 'smooth' });
+            });
+
+            deleteBtn.addEventListener('click', () => {
+                showModal('댓글을 삭제하시겠습니까?', () => {
+                    deleteComment(comment.commentId);
+                });
+            });
+        }
+
+        return commentEl;
+    }
+
+    function prependComment(comment) {
+        const nextCommentId = String(comment.commentId || '');
+        if (nextCommentId && commentList.querySelector(`[data-id="${nextCommentId}"]`)) {
+            return;
+        }
+        const commentEl = buildCommentElement(comment);
+        commentList.appendChild(commentEl);
+    }
+
+    function replaceRenderedComment(commentId, nextComment) {
+        const targetId = String(commentId || nextComment.commentId || '');
+        const existing = targetId ? commentList.querySelector(`[data-id="${targetId}"]`) : null;
+        const nextEl = buildCommentElement(nextComment);
+        if (existing) {
+            existing.replaceWith(nextEl);
+            return;
+        }
+        commentList.appendChild(nextEl);
+    }
+
     function renderComments(comments) {
-
-
         commentList.innerHTML = '';
-
         comments.forEach((comment) => {
-            const commentEl = document.createElement('div');
-            commentEl.className = 'comment-item';
-            commentEl.dataset.id = comment.commentId;
-
-            // 현재 사용자가 댓글 작성자인지 확인
-            // 보안: authorId/userId만 사용하여 판별
-            const currentUserId = currentUser ? String(currentUser.userId) : null;
-
-            // 백엔드가 authorId, userId, 또는 중첩된 author.userId를 반환해야 함
-            let commentAuthorId = null;
-            if (comment.authorId) {
-                commentAuthorId = String(comment.authorId);
-            } else if (comment.userId) {
-                commentAuthorId = String(comment.userId);
-            } else if (comment.author && comment.author.userId) {
-                commentAuthorId = String(comment.author.userId);
-            }
-
-            // ID 기반 소유권 확인만 허용
-            const isOwner = Boolean(currentUserId && commentAuthorId && currentUserId === commentAuthorId);
-
-
-
-            // 표시할 작성자 이름 가져오기 (다양한 필드 시도)
-            const authorDisplayName = comment.authorNickname || comment.nickname || comment.writer || '익명';
-
-            const headerEl = document.createElement('div');
-            headerEl.className = 'comment-header';
-
-            const authorInfoEl = document.createElement('div');
-            authorInfoEl.className = 'comment-author-info';
-
-            const avatarEl = document.createElement('div');
-            avatarEl.className = 'comment-avatar';
-            if (comment.authorProfileImage) {
-                avatarEl.style.backgroundImage = `url("${comment.authorProfileImage}")`;
-            }
-
-            const authorNameEl = document.createElement('span');
-            authorNameEl.className = 'comment-author-name';
-            authorNameEl.textContent = authorDisplayName;
-
-            const dateEl = document.createElement('span');
-            dateEl.className = 'comment-date';
-            dateEl.textContent = formatDate(comment.createdAt);
-
-            authorInfoEl.append(avatarEl, authorNameEl, dateEl);
-            headerEl.appendChild(authorInfoEl);
-
-            let editBtn = null;
-            let deleteBtn = null;
-            if (isOwner) {
-                const actionsEl = document.createElement('div');
-                actionsEl.className = 'comment-actions';
-
-                editBtn = document.createElement('button');
-                editBtn.className = 'comment-action-btn edit-comment-btn';
-                editBtn.type = 'button';
-                editBtn.textContent = '수정';
-
-                deleteBtn = document.createElement('button');
-                deleteBtn.className = 'comment-action-btn delete-comment-btn';
-                deleteBtn.type = 'button';
-                deleteBtn.textContent = '삭제';
-
-                actionsEl.append(editBtn, deleteBtn);
-                headerEl.appendChild(actionsEl);
-            }
-
-            const contentEl = document.createElement('div');
-            contentEl.className = 'comment-content';
-            contentEl.textContent = comment.content || '';
-
-            commentEl.append(headerEl, contentEl);
-
-            // 이 댓글에 이벤트 바인딩
-            if (isOwner) {
-                editBtn.addEventListener('click', () => {
-                    editingCommentId = comment.commentId;
-                    commentInput.value = comment.content;
-                    commentInput.focus();
-                    commentSubmitBtn.textContent = '댓글 수정';
-                    commentSubmitBtn.disabled = false;
-                    commentSubmitBtn.classList.add('active');
-                    // 입력창으로 스크롤
-                    commentInput.scrollIntoView({ behavior: 'smooth' });
-                });
-
-                deleteBtn.addEventListener('click', () => {
-                    showModal('댓글을 삭제하시겠습니까?', () => {
-                        deleteComment(comment.commentId);
-                    });
-                });
-            }
-
-            commentList.appendChild(commentEl);
+            commentList.appendChild(buildCommentElement(comment));
         });
     }
 

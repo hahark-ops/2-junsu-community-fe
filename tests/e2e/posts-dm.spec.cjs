@@ -46,6 +46,7 @@ test('게시글, 댓글, 좋아요, DM, unread 흐름', async ({ browser }) => {
   const commentResult = await commentResponse.json();
   expect(commentResult.data.content).toBe(commentContent);
   await expect(pageB.locator('#commentCount')).toContainText('1', { timeout: 15000 });
+  await expect(pageB.locator('#commentList .comment-content').filter({ hasText: commentContent }).first()).toBeVisible({ timeout: 15000 });
 
   await pageB.locator('.author-info').click();
   await pageB.getByRole('button', { name: '채팅하기' }).click();
