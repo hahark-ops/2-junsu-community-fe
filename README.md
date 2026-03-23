@@ -1,133 +1,76 @@
-# 🌐 아무 말 대잔치 - 커뮤니티 게시판
+# 🌐 아무 말 대잔치 FE
 
-> 자유롭게 소통하는 커뮤니티 게시판 서비스입니다.
+`아무 말 대잔치` 프론트엔드 저장소입니다.  
+정적 HTML/CSS/Vanilla JavaScript 기반 UI를 Express로 서빙하고, 백엔드 FastAPI API로 프록시하는 구조입니다.
 
-<br>
-
-## 📖 목차
-
-- [주요 기능](#-주요-기능)
-- [기술 스택](#-기술-스택)
-- [프로젝트 구조](#-프로젝트-구조)
-- [설치 및 실행](#️-설치-및-실행)
-- [페이지 상세](#-페이지-상세)
-  - [로그인](#-로그인-loginhtml)
-  - [회원가입](#-회원가입-signuphtml)
-  - [게시글 목록](#-게시글-목록-indexhtml)
-  - [게시글 상세](#-게시글-상세-post_detailhtml)
-  - [게시글 작성](#-게시글-작성-post_writehtml)
-  - [게시글 수정](#-게시글-수정-post_edithtml)
-  - [프로필 관리](#-프로필-관리-profilehtml)
-  - [비밀번호 변경](#-비밀번호-변경-passwordhtml)
-- [공통 컴포넌트](#-공통-컴포넌트)
-- [관련 저장소](#-관련-저장소)
-
-<br>
+이 저장소는 단순 화면 모음이 아니라 아래 흐름을 포함합니다.
+- 회원가입 / 로그인 / 로그아웃
+- 게시글 작성 / 수정 / 상세 / 좋아요 / 댓글
+- 프로필 수정 / 비밀번호 변경 / 회원 탈퇴
+- 실시간 1:1 DM, unread/read, 브라우저 Web Push UI
+- Playwright E2E 테스트
 
 ---
 
-## ✨ 주요 기능
+## 주요 기능
 
-### 👤 회원 관리
-| 기능 | 설명 |
-|:---|:---|
-| 회원가입 | 이메일/비밀번호/닉네임/프로필 이미지 등록 |
-| 로그인 | 이메일/비밀번호 인증, 세션 기반 |
-| 로그아웃 | 세션 종료 및 로컬 데이터 정리 |
-| 회원 탈퇴 | 계정 영구 삭제 |
+### 1. 인증 / 계정
+- 회원가입
+  - 이메일 / 비밀번호 / 닉네임 검증
+  - 이메일 / 닉네임 중복 확인
+  - 프로필 이미지 업로드
+- 로그인 / 로그아웃
+- 회원 탈퇴
+  - 계정과 관련 데이터 영구 삭제
+  - 탈퇴 후 같은 이메일 / 닉네임으로 재가입 가능
+- 프로필 수정
+- 비밀번호 변경
 
-### 📝 게시글 관리
-| 기능 | 설명 |
-|:---|:---|
-| 게시글 작성 | 제목, 내용, 이미지 첨부 |
-| 게시글 조회 | 무한 스크롤, 조회수 표시 |
-| 게시글 수정 | 본인 게시글만 수정 가능 |
-| 게시글 삭제 | 본인 게시글만 삭제 가능 |
-| 좋아요 | 좋아요/좋아요 취소 토글 |
+### 2. 게시글
+- 게시글 목록 무한 스크롤
+- 게시글 작성 / 수정 / 삭제
+- 게시글 상세 조회
+- 조회수 / 좋아요 / 댓글 수 표시
+- 작성자 카드에서 바로 DM 진입
 
-### 💬 댓글 관리
-| 기능 | 설명 |
-|:---|:---|
-| 댓글 작성 | 게시글에 댓글 작성 |
-| 댓글 수정 | 본인 댓글만 수정 가능 |
-| 댓글 삭제 | 본인 댓글만 삭제 가능 |
+### 3. 댓글 / 좋아요
+- 댓글 작성 / 수정 / 삭제
+- 좋아요 토글
+- 댓글 수 / 좋아요 수 즉시 반영
 
-### ⚙️ 프로필 관리
-| 기능 | 설명 |
-|:---|:---|
-| 프로필 이미지 변경 | 새 이미지 업로드 |
-| 닉네임 변경 | 1~10자, 특수문자/공백 불가 |
-| 비밀번호 변경 | 기존 비밀번호 확인 후 변경 |
+### 4. 실시간 DM
+- 채팅방 목록 / 방별 unread 표시
+- 실시간 1:1 WebSocket 채팅
+- 읽음 / 미읽음 상태 반영
+- 방 목록 재정렬
+- Web Push 구독 UI와 Service Worker 연동
+  - 브라우저 정책상 실제 Web Push 수신은 `localhost` 또는 `HTTPS` 환경에서 동작
 
-<br>
+### 5. 테스트
+- Playwright 기반 E2E 테스트 포함
+- 주요 검증 시나리오
+  - 회원가입 / 로그인 / 로그아웃
+  - 프로필 수정 / 탈퇴 후 재가입
+  - 게시글 / 댓글 / 좋아요 / DM / unread 흐름
 
 ---
 
-## 🛠 기술 스택
+## 기술 스택
 
 | 구분 | 기술 |
-|:---:|:---|
-| **Frontend** | ![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=flat&logo=html5&logoColor=white) ![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=flat&logo=css3&logoColor=white) ![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=flat&logo=javascript&logoColor=black) |
-| **Server** | ![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat&logo=node.js&logoColor=white) ![Express](https://img.shields.io/badge/Express-000000?style=flat&logo=express&logoColor=white) |
-| **Backend API** | ![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat&logo=fastapi&logoColor=white) (별도 서버) |
-
-<br>
-
----
-
-## 📁 프로젝트 구조
-
-```
-📦 2-junsu-community-fe
-├── 📂 public
-│   ├── 📂 css                    # 스타일시트
-│   │   ├── common.css            # 공통 스타일
-│   │   ├── login.css             # 로그인 페이지
-│   │   ├── signup.css            # 회원가입 페이지
-│   │   ├── posts.css             # 게시글 목록
-│   │   ├── post_detail.css       # 게시글 상세
-│   │   ├── post_write.css        # 게시글 작성/수정
-│   │   ├── profile.css           # 프로필 관리
-│   │   └── password.css          # 비밀번호 변경
-│   │
-│   ├── 📂 js                     # JavaScript 파일
-│   │   ├── common.js             # 공통 유틸리티 (API URL, 포맷터 등)
-│   │   ├── modal.js              # 커스텀 모달 컴포넌트
-│   │   ├── login.js              # 로그인 로직
-│   │   ├── signup.js             # 회원가입 로직
-│   │   ├── posts.js              # 게시글 목록 (무한 스크롤)
-│   │   ├── post_detail.js        # 게시글 상세 (좋아요, 댓글)
-│   │   ├── post_write.js         # 게시글 작성
-│   │   ├── post_edit.js          # 게시글 수정
-│   │   ├── profile.js            # 프로필 관리
-│   │   └── password.js           # 비밀번호 변경
-│   │
-│   ├── 📄 index.html             # 게시글 목록 페이지
-│   ├── 📄 login.html             # 로그인 페이지
-│   ├── 📄 signup.html            # 회원가입 페이지
-│   ├── 📄 post_detail.html       # 게시글 상세 페이지
-│   ├── 📄 post_write.html        # 게시글 작성 페이지
-│   ├── 📄 post_edit.html         # 게시글 수정 페이지
-│   ├── 📄 profile.html           # 프로필 관리 페이지
-│   └── 📄 password.html          # 비밀번호 변경 페이지
-│
-├── 📂 src
-│   └── 📄 server.js              # Express 정적 파일 서버
-│
-├── 📄 package.json
-└── 📄 README.md
-```
-
-<br>
+|:---|:---|
+| UI | HTML, CSS, Vanilla JavaScript |
+| FE 서버 | Express |
+| 백엔드 연동 | `http-proxy-middleware` |
+| E2E 테스트 | Playwright |
 
 ---
 
-## ⚙️ 설치 및 실행
+## 실행 방법
 
-### 1. 저장소 클론
+### 1. 저장소 이동
 ```bash
-git clone https://github.com/hahark-ops/2-junsu-community-fe.git
-cd 2-junsu-community-fe
+cd /Users/junsu/Desktop/2-junsu-community-fe
 ```
 
 ### 2. 의존성 설치
@@ -135,182 +78,173 @@ cd 2-junsu-community-fe
 npm install
 ```
 
-### 3. 서버 실행
+### 3. 프론트 서버 실행
 ```bash
 npm start
 ```
 
-### 4. 브라우저 접속
-```
-http://localhost:3000
-```
+기본 실행 포트는 `3000`입니다.
 
-> ⚠️ **주의**: 백엔드 API 서버(`localhost:8000`)가 실행 중이어야 정상 동작합니다.
-
-<br>
+### 4. 접속 주소
+- 기본: [http://localhost:3000](http://localhost:3000)
+- 루트(`/`)는 `login.html`을 서빙합니다.
+- 게시글 목록은 `index.html`입니다.
 
 ---
 
-## 📑 페이지 상세
+## 환경 변수
 
-### � 로그인 (`login.html`)
+### 런타임
+- `PORT`
+  - 기본값: `3000`
+- `BACKEND_TARGET`
+  - 기본값: `http://127.0.0.1:8000`
+  - `/v1`, `/uploads` 요청을 이 주소로 프록시합니다.
 
-**경로**: `/` (루트) 또는 `/login.html`
-
-| 기능 | 설명 |
-|:---|:---|
-| 이메일 입력 | 형식 검증 (예: `example@example.com`) |
-| 비밀번호 입력 | 8~20자, 대/소문자/숫자/특수문자 포함 |
-| 로그인 버튼 | 모든 입력이 유효할 때만 활성화 |
-| 회원가입 링크 | `/signup.html`로 이동 |
-
-**유효성 검사**:
-- 이메일: 정규식 패턴 `/^[^\s@]+@[^\s@]+\.[^\s@]+$/`
-- 비밀번호: 정규식 패턴 `/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,20}$/`
-
----
-
-### 📝 회원가입 (`signup.html`)
-
-**경로**: `/signup.html`
-
-| 기능 | 설명 |
-|:---|:---|
-| 프로필 이미지 | 클릭하여 이미지 선택, 미리보기 표시 |
-| 이메일 | 형식 검증 + **실시간 중복 확인** |
-| 비밀번호 | 8~20자, 대/소문자/숫자/특수문자 필수 |
-| 비밀번호 확인 | 비밀번호 일치 여부 확인 |
-| 닉네임 | 1~10자, 특수문자/공백 불가 + **실시간 중복 확인** |
-
-**API 호출**:
-- `GET /v1/auth/emails/availability?email=...` - 이메일 중복 확인
-- `GET /v1/auth/nicknames/availability?nickname=...` - 닉네임 중복 확인
-- `POST /v1/files` - 프로필 이미지 업로드
-- `POST /v1/auth/signup` - 회원가입 처리
-
----
-
-### 📋 게시글 목록 (`index.html`)
-
-**경로**: `/posts`
-
-| 기능 | 설명 |
-|:---|:---|
-| 게시글 카드 | 제목, 좋아요/댓글/조회수, 작성일, 작성자 표시 |
-| 무한 스크롤 | IntersectionObserver 활용, 10개씩 로드 |
-| 게시글 클릭 | 해당 게시글 상세 페이지로 이동 |
-| 글쓰기 버튼 | `/post_write.html`로 이동 |
-| 프로필 드롭다운 | 프로필 관리, 비밀번호 변경, 로그아웃 |
-
-**bfcache 대응**:
-- `pageshow` 이벤트로 뒤로가기 시 데이터 새로고침
-
----
-
-### 📄 게시글 상세 (`post_detail.html`)
-
-**경로**: `/post_detail.html?id={postId}`
-
-| 기능 | 설명 |
-|:---|:---|
-| 게시글 표시 | 제목, 작성자, 작성일, 내용, 이미지 |
-| 좋아요 버튼 | 토글 방식 (좋아요/취소) |
-| 조회수 | 페이지 접근 시 자동 증가 |
-| 수정/삭제 버튼 | 본인 게시글인 경우에만 표시 |
-| 댓글 목록 | 작성, 수정, 삭제 (본인만) |
-
-**삭제 확인**:
-- 커스텀 모달로 삭제 전 확인
-
----
-
-### ✏️ 게시글 작성 (`post_write.html`)
-
-**경로**: `/post_write.html`
-
-| 기능 | 설명 |
-|:---|:---|
-| 제목 입력 | 최대 26자 |
-| 내용 입력 | 텍스트 영역 |
-| 이미지 첨부 | 파일 선택, 미리보기 |
-| 작성 버튼 | 제목과 내용 입력 시 활성화 |
-
----
-
-### 🔄 게시글 수정 (`post_edit.html`)
-
-**경로**: `/post_edit.html?id={postId}`
-
-| 기능 | 설명 |
-|:---|:---|
-| 기존 데이터 로드 | 제목, 내용, 이미지 불러오기 |
-| 이미지 변경 | 새 이미지 업로드 또는 기존 유지 |
-| 수정 완료 | 변경된 내용 저장 |
-
----
-
-### 👤 프로필 관리 (`profile.html`)
-
-**경로**: `/profile.html`
-
-| 기능 | 설명 |
-|:---|:---|
-| 이메일 표시 | 변경 불가 (읽기 전용) |
-| 프로필 이미지 변경 | 클릭하여 새 이미지 선택 |
-| 닉네임 변경 | 1~10자, 특수문자/공백 불가 |
-| 회원 탈퇴 | 모달 확인 후 계정 삭제 |
-
-**토스트 알림**:
-- 프로필 수정 완료 시 하단 토스트 표시
-
----
-
-### 🔒 비밀번호 변경 (`password.html`)
-
-**경로**: `/password.html`
-
-| 기능 | 설명 |
-|:---|:---|
-| 현재 비밀번호 | 기존 비밀번호 입력 |
-| 새 비밀번호 | 8~20자, 대/소문자/숫자/특수문자 필수 |
-| 새 비밀번호 확인 | 새 비밀번호 일치 확인 |
-
-**유효성 검사**:
-- 새 비밀번호가 현재 비밀번호와 동일하면 에러
-- 모든 조건 만족 시 수정 버튼 활성화
-
-<br>
-
----
-
-## 🧩 공통 컴포넌트
-
-### `common.js`
-```javascript
-const API_BASE_URL = 'http://localhost:8000';  // 백엔드 API 주소
-
-function formatNumber(num) { ... }  // 숫자 포맷팅 (1000 → 1k)
-function formatDate(dateString) { ... }  // 날짜 포맷팅
-function showCustomModal(message, callback) { ... }  // 알림 모달
+예시:
+```bash
+PORT=3000 BACKEND_TARGET=http://127.0.0.1:8000 npm start
 ```
 
-### `modal.js`
-- 재사용 가능한 커스텀 확인/취소 모달 컴포넌트
+---
 
-<br>
+## 테스트
+
+### Playwright E2E
+```bash
+npm run test:e2e
+```
+
+### 헤드 모드 실행
+```bash
+npm run test:e2e:headed
+```
+
+테스트 기본 대상 주소는 `http://127.0.0.1`입니다.  
+필요하면 `PLAYWRIGHT_BASE_URL`로 변경할 수 있습니다.
+
+예시:
+```bash
+PLAYWRIGHT_BASE_URL=http://127.0.0.1 npm run test:e2e
+```
 
 ---
 
-## 🔗 관련 저장소
+## 프로젝트 구조
 
-| 저장소 | 설명 |
-|:---|:---|
-| [2-junsu-community-be](https://github.com/hahark-ops/2-junsu-community-be) | FastAPI 백엔드 서버 |
-
-<br>
+```text
+2-junsu-community-fe
+├── css/
+│   ├── common.css
+│   ├── dm.css
+│   ├── login.css
+│   ├── password.css
+│   ├── post_detail.css
+│   ├── post_write.css
+│   ├── posts.css
+│   ├── profile.css
+│   └── signup.css
+├── js/
+│   ├── common.js
+│   ├── config.js
+│   ├── dm.js
+│   ├── login.js
+│   ├── modal.js
+│   ├── password.js
+│   ├── post_detail.js
+│   ├── post_edit.js
+│   ├── post_write.js
+│   ├── posts.js
+│   ├── profile.js
+│   └── signup.js
+├── tests/e2e/
+│   ├── auth-profile.spec.cjs
+│   ├── helpers.cjs
+│   └── posts-dm.spec.cjs
+├── src/
+│   └── server.js
+├── dm.html
+├── index.html
+├── login.html
+├── password.html
+├── playwright.config.cjs
+├── post_detail.html
+├── post_edit.html
+├── post_write.html
+├── profile.html
+├── push-sw.js
+├── signup.html
+├── Dockerfile
+├── package.json
+└── README.md
+```
 
 ---
 
-<p align="center">
-  Made with ❤️ by junsu
-</p>
+## 페이지 구성
+
+### `login.html`
+- 루트 진입 화면
+- 로그인 처리
+- 회원가입 화면 이동
+
+### `signup.html`
+- 회원가입
+- 프로필 이미지 선택
+- 이메일 / 닉네임 중복 확인
+
+### `index.html`
+- 게시글 목록
+- 무한 스크롤
+- 프로필 드롭다운
+- DM 진입 버튼
+
+### `post_write.html`
+- 게시글 작성
+- 이미지 첨부
+
+### `post_edit.html`
+- 기존 게시글 수정
+
+### `post_detail.html`
+- 게시글 상세
+- 좋아요 / 댓글
+- 작성자 카드
+- DM 진입
+
+### `dm.html`
+- 채팅방 목록
+- 실시간 DM
+- unread/read 반영
+- 브라우저 알림 구독 UI
+
+### `profile.html`
+- 프로필 이미지 / 닉네임 수정
+- 회원 탈퇴
+
+### `password.html`
+- 비밀번호 변경
+
+---
+
+## 프론트 서버 역할
+
+`src/server.js`는 다음 역할을 합니다.
+- 정적 HTML / CSS / JS 파일 서빙
+- `/v1`, `/uploads` 요청을 백엔드로 프록시
+- 개발/로컬 검증 시 프론트 단독 실행 진입점 제공
+
+즉 이 저장소는 정적 파일만 있는 것이 아니라,  
+프론트 전용 Express 서버를 통해 백엔드와 연결되는 구조입니다.
+
+---
+
+## 관련 저장소
+- 백엔드: [https://github.com/hahark-ops/2-junsu-community-be](https://github.com/hahark-ops/2-junsu-community-be)
+- 프론트엔드: [https://github.com/hahark-ops/2-junsu-community-fe](https://github.com/hahark-ops/2-junsu-community-fe)
+
+---
+
+## 비고
+- 현재 공개 EC2의 `HTTP + IP` 환경에서는 브라우저 정책상 Web Push가 비활성일 수 있습니다.
+- Web Push는 `localhost` 또는 `HTTPS` 환경에서 정상 테스트하는 것이 맞습니다.
